@@ -6,7 +6,7 @@ MoveGraph turns a relocation checklist into a dependency model. It comes from Ha
 
 The prototype now tests a broader and more useful question: **When any planned date changes, what moves after it, what stays put, and where does a person need to decide?**
 
-The dates, notes, and San Francisco–Berlin scenario are illustrative planning data. They are not official relocation requirements or a record of an actual booking.
+The dates, notes, and Tokyo-to-San Francisco scenario are illustrative planning data. They are not official relocation requirements or a record of an actual booking.
 
 ## Scheduling model
 
@@ -72,6 +72,8 @@ Propagation is directional. A change affects the edited task and its descendants
 6. Select Internet, move 7 October to 14 October, and show that earlier dates stay unchanged while Readiness moves to 17 October.
 7. Use “Follow dependencies again” to remove the pin.
 8. Optional closing trust moment: inspect the inactive address-to-banking suggestion and decide whether research should remain independent.
+
+The recording-ready click sequence and timed pitch are maintained in `DEMO_SCRIPT.md`.
 
 ## Why arbitrary event creation remains outside this prototype
 

@@ -26,11 +26,11 @@ The dependency map and inspector stay focused on the current plan. The compariso
 
 ## Scope and provenance
 
-The San Francisco–Berlin route, October 2026 dates, coordinator note, and dependencies are an illustrative scenario, not a record of Hayk’s actual move or official relocation requirements. Completed steps and travel bookings are fictional. Data is held in memory and resets on refresh. Applying a plan does not alter external bookings.
+The Tokyo-to-San Francisco route, October 2026 dates, coordinator note, and dependencies are an illustrative scenario, not a record of Hayk’s actual move or official relocation requirements. Completed steps and travel bookings are fictional. Data is held in memory and resets on refresh. Applying a plan does not alter external bookings.
 
 This prototype was developed with AI assistance. Scheduling uses explicit local rules, not a live AI model. It has no backend or API keys. Supported browsers expose WebMCP tools for reading the plan, staging dates, inspecting steps, returning eligible tasks to automatic scheduling, and discarding a preview. Applying a plan remains in the interface.
 
-`dist/model.mjs` holds scheduling rules; `dist/app.js` holds shared state and interactions. Fonts load from Google Fonts with local sans-serif fallbacks.
+`dist/model.mjs` holds scheduling rules; `dist/app.js` holds shared state and interactions. The interface applies the supplied design system with a 1200px grid, an 8px spacing rhythm, neutral surfaces, restrained elevation, and semantic green, blue, and red states. It requests Alliance No.1 and No.2 when installed and uses metric-controlled Arial fallbacks because no distributable Alliance files are included with the supplied design reference.
 
 ## Validation
 
