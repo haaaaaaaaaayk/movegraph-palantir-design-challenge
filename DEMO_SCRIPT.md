@@ -23,7 +23,7 @@ This path demonstrates the qualities the Palantir role emphasizes: simplifying a
 | 0:48–1:17 | Pause on **Same day**, **1 day later**, and **2 days later**. Point to the date, named grouped tasks, Internet timing, and check-in consequence on each card. Click **2 days later**, then click **Compare other options** directly beneath the outcome. Point out that Housing remains on 12 Oct, then click **2 days later** again. | The user can compare timing strategies without restarting the edit or changing the saved plan. The selected plan puts Address Pack and Internet on 14 Oct, requests Check-in on 15 Oct, caps the day at two tasks, and meets 17 Oct if the new slot is confirmed. |
 | 1:17–1:38 | Scroll to the blue unsaved-change banner and click **Review change**. Pause on the before/after rows and the readiness result. Click **Apply this plan**. Scroll to the top and click **Undo change**. | The plan is reviewable before commit. Rebooking is still a request, and the entire change is reversible. |
 | 1:38–1:58 | Click **Arrange home internet**. Change **Planned completion** from 14 to **15 October 2026**. Point to the deadline warning, then click **Use 14 Oct**. Click **Follow dependencies**. | A later task is editable, but 15 Oct would make the projected finish the 18th. Ready stays fixed on the 17th, the invalid plan cannot be applied, and one click restores the latest safe date. |
-| 1:58–2:17 | Click **Compare local banking options**. Point to the dotted line and **Design hypothesis · inactive**. Click **Preview dependency**, then click **Reset preview** in the blue banner. | AI initially treated banking as independent. Hayk challenged that assumption because an address may affect which branches are practical, then kept the possible relationship reviewable. Previewing does not change the saved plan. |
+| 1:58–2:17 | Click **Compare local banking options**. Point to the dotted line and **Design hypothesis**. Click **Preview dependency**, then click **Reset preview** in the blue banner. | AI initially treated banking as independent. Hayk challenged that assumption because an address may affect which branches are practical, then kept the possible relationship reviewable. Previewing does not change the saved plan. |
 | 2:17–2:50 | Scroll to the top and click **About**. Point to **Constraint hierarchy** and **How AI contributed** while delivering the final lines. Click **Back to the plan** to end. | The demo closes with the design rationale and returns to a trustworthy baseline. |
 
 ## Spoken script
@@ -48,7 +48,7 @@ This path demonstrates the qualities the Palantir role emphasizes: simplifying a
 
 **1:58–2:17 — Keep AI advisory**
 
-“AI first treated banking as independent. I challenged that assumption because my address may affect which branches are practical. The possible link stays dotted and inactive until I review it. Previewing stages its effect without changing my saved plan.”
+“AI first treated banking as independent. I challenged that assumption because my address may affect which branches are practical. The possible link stays dotted until I review it. Previewing stages its effect without changing my saved plan.”
 
 **2:17–2:50 — Process and next step**
 

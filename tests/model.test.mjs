@@ -177,7 +177,7 @@ test('suggested dependencies change banking only after acceptance',()=>{
   assert.equal(edgesFor({...delayed,bankReviewed:true}).some(edge=>edge.to==='bank'),false);
 });
 
-test('inactive suggestions do not look active from another task',()=>{
+test('unaccepted suggestions do not look active from another task',()=>{
   assert.equal(connectedIds('address',INITIAL_PLAN).has('bank'),false);
   assert.equal(connectedIds('bank',INITIAL_PLAN).has('address'),true);
   assert.equal(connectedIds('address',{...INITIAL_PLAN,bankDependency:true,bankReviewed:true}).has('bank'),true);

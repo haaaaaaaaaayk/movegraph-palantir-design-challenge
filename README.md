@@ -20,7 +20,7 @@ Open http://127.0.0.1:4173. No install or build step is required.
 - A person may pin a flexible task to a date. An impossible pin remains visible as a conflict rather than silently changing another commitment.
 - The planner may compress work to at most **two planned preparation tasks on one day** when that is required to protect the deadline.
 - A fixed appointment moves only after the interface explains that a new slot must be requested. The prototype never represents that request as a confirmed booking.
-- Design hypotheses remain inactive until the person reviews them.
+- Design hypotheses have no scheduling effect until the person reviews them.
 
 ## Main interaction
 
@@ -31,7 +31,7 @@ The baseline is ready on 17 October for an 18 October arrival: Housing on the 10
 3. Choose **2 days later** to preserve the full preparation time. The preview places Address Pack and Internet together on 14 October and requests Check-in on the 15th. Select **Compare other options** in the outcome card to return to all three choices: Housing stays staged on 12 October and the saved plan remains untouched. Choose **2 days later** again to continue. The plan meets the fixed 17 October deadline if that external slot is confirmed. No day has more than two planned preparation tasks.
 4. Select **Review change** to inspect the exact before-and-after dates, apply the plan, and use **Undo change** to restore the baseline.
 5. Select **Arrange home internet** and move it from 14 to 15 October. The interface blocks the change because Internet must be complete by the 14th to preserve the ready-by deadline. Select **Use 14 Oct**, then **Follow dependencies** to return it to automatic scheduling.
-6. Select **Compare local banking options** to inspect a proposed address dependency. The initial AI-generated plan treated banking as independent; Hayk challenged that assumption because an address may affect which branches are nearby and which option is practical. This is a design hypothesis, not a relocation requirement, so the dotted relationship stays inactive until a person reviews it. **Preview dependency** stages it, and **Reset preview** discards it.
+6. Select **Compare local banking options** to inspect a proposed address dependency. The initial AI-generated plan treated banking as independent; Hayk challenged that assumption because an address may affect which branches are nearby and which option is practical. This is a design hypothesis, not a relocation requirement, so the dotted relationship has no scheduling effect until a person reviews it. **Preview dependency** stages it, and **Reset preview** discards it.
 
 The dependency map and inspector stay focused on the current plan. A comparison timeline appears only after an edit, with saved dates beside the preview. Narrow screens present the same tasks as a linear list. Completed steps and the ready-by deadline are read-only.
 
@@ -51,4 +51,4 @@ node --check dist/app.js
 node --check dist/model.mjs
 ```
 
-The model tests cover the fixed deadline and arrival date, the three address-pack timing choices, the two-task daily capacity, deadline guards, directional propagation, manual pins, fixed appointments, reviewable dependencies, recovery alternatives, and invalid dates. UI validation covers the Housing 10→12 flow, returning from a timing preview to all three choices without changing Housing or the saved plan, review/apply/undo, the Internet 15 deadline guard and **Use 14 Oct** repair, the inactive banking hypothesis, and responsive layouts.
+The model tests cover the fixed deadline and arrival date, the three address-pack timing choices, the two-task daily capacity, deadline guards, directional propagation, manual pins, fixed appointments, reviewable dependencies, recovery alternatives, and invalid dates. UI validation covers the Housing 10→12 flow, returning from a timing preview to all three choices without changing Housing or the saved plan, review/apply/undo, the Internet 15 deadline guard and **Use 14 Oct** repair, the banking hypothesis, and responsive layouts.

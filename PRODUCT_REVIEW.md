@@ -22,7 +22,7 @@ Every editable task also exposes the source of its date:
 - **Automatic:** the earliest valid date from active prerequisites and the chosen timing.
 - **Pinned:** a date set by the person that stays fixed until changed or returned to automatic scheduling.
 - **Fixed appointment:** moves only after an explicit request; the prototype never claims that the external booking changed.
-- **Design hypothesis · inactive:** a possible relationship with no scheduling effect until accepted. In this case, the AI-generated baseline treated Banking as independent; Hayk raised the address relationship after challenging that assumption.
+- **Design hypothesis:** a possible relationship with no scheduling effect until accepted. In this case, the AI-generated baseline treated Banking as independent; Hayk raised the address relationship after challenging that assumption.
 
 Propagation runs forward. Earlier tasks and independent branches remain stable. Impossible pins remain visible with the limiting dependency or deadline and block application until repaired.
 
@@ -36,7 +36,7 @@ Propagation runs forward. Earlier tasks and independent branches remain stable. 
 6. **Choose the full two days.** This option demonstrates that the planner can preserve a realistic task duration by parallelizing compatible work while still meeting the hard deadline.
 7. **Review, apply, and undo.** The review shows exact before/after dates and timing changes. Applying updates the in-memory demo plan. Undo restores the previous dates and scheduling modes.
 8. **Guard a later task.** Moving Internet from the 14th to the 15th creates a deadline conflict because the plan needs three days after Internet to finish. The projected finish is the 18th, but Ready remains fixed on the 17th. **Use 14 Oct** supplies the latest safe date, and **Follow dependencies** removes the manual pin.
-9. **Review a challenged AI assumption.** The AI-generated baseline treated Banking as independent. Hayk challenged that assumption because an address may affect nearby branches and the practical choice of provider. Because this is contextual rather than universally true, the alternative appears as a dotted, inactive relationship. The person can preview it or keep Banking independent before any change is applied.
+9. **Review a challenged AI assumption.** The AI-generated baseline treated Banking as independent. Hayk challenged that assumption because an address may affect nearby branches and the practical choice of provider. Because this is contextual rather than universally true, the alternative appears as a dotted design hypothesis. The person can preview it or keep Banking independent before any change is applied.
 
 ## Feedback implemented
 
@@ -53,7 +53,7 @@ Propagation runs forward. Earlier tasks and independent branches remain stable. 
 | User-set dates need predictable behavior | Editing an automatic date creates a visible pin with a **Follow dependencies** action. |
 | Conflicts should remain honest | Impossible dates stay visible with the earliest or latest valid date; the plan cannot be applied until repaired. |
 | The timeline should teach the model | It appears after an edit, with saved dates shown beside the preview. |
-| AI treated Banking as independent, but address context may matter | Hayk's alternative is shown as a dotted, inactive design hypothesis. Preview and apply remain separate human decisions rather than turning either assumption into an automatic rule. |
+| AI treated Banking as independent, but address context may matter | Hayk's alternative is shown as a dotted design hypothesis. Preview and apply remain separate human decisions rather than turning either assumption into an automatic rule. |
 | Changes should feel safe | All edits are staged, reviewed before apply, and immediately undoable. |
 | Mobile should remain usable | Narrow screens use a linear Steps view with the same editing and status information and no page-level horizontal overflow. |
 
@@ -78,7 +78,7 @@ Propagation runs forward. Earlier tasks and independent branches remain stable. 
 5. Choose **2 days later**. Show Address Pack and Internet grouped on the 14th, the Check-in request on the 15th, and readiness on the 17th conditional on that external confirmation.
 6. Review the exact change, apply it, and undo it.
 7. Move Internet from the 14th to the 15th to demonstrate the deadline guard, then select **Use 14 Oct** and **Follow dependencies**.
-8. Inspect the inactive address-to-banking relationship to show how Hayk challenged the AI-generated independent baseline while keeping the alternative reviewable.
+8. Inspect the address-to-banking design hypothesis to show how Hayk challenged the AI-generated independent baseline while keeping the alternative reviewable.
 9. Close with AI’s role in the process and the next research step.
 
 The recording-ready click sequence and timed narration are in `DEMO_SCRIPT.md`.

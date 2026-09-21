@@ -73,7 +73,7 @@ function statusLabel(task,result,plan=current()){
   if(result.status==='conflict'&&result.constraint==='deadline') return `Misses ${formatDay(READY_BY_DAY)} deadline`;
   if(result.status==='conflict') return 'Date conflict';
   if(result.status==='blocked') return task.id==='ready'?`${formatDay(READY_BY_DAY)} deadline at risk`:'Blocked by conflict';
-  if(result.status==='review') return 'Design hypothesis · inactive';
+  if(result.status==='review') return 'Design hypothesis';
   if(result.mode==='manual') return 'Pinned date';
   if(result.mode==='automatic') return 'Automatic';
   if(result.mode==='fixed') return plan.rebooked?'Rebooking needed':'Fixed appointment';
@@ -126,7 +126,7 @@ function renderGraph(){
   const legend=[];
   if(TASKS.some(task=>dates[task.id].mode==='manual')) legend.push('<span><i class="legend-pin"></i> Pinned</span>');
   if(TASKS.some(task=>dates[task.id].mode==='fixed')) legend.push('<span><i class="legend-fixed"></i> Fixed</span>');
-  if(state.selected==='bank'&&!plan.bankReviewed) legend.push('<span><i class="legend-line dotted"></i> Design hypothesis · inactive</span>');
+  if(state.selected==='bank'&&!plan.bankReviewed) legend.push('<span><i class="legend-line dotted"></i> Design hypothesis</span>');
   $('.graph-legend').innerHTML=legend.join('');
   document.querySelectorAll('[data-task]').forEach(element=>element.onclick=()=>selectTask(element.dataset.task));
 
@@ -226,9 +226,9 @@ function renderInspector(){
 
   const dateEditor=editable?`<div class="date-control"><label for="task-date">${dateLabel}</label><input id="task-date" type="date" min="2026-10-01" max="2026-10-${String(maxDay).padStart(2,'0')}" value="2026-10-${String(inputDay).padStart(2,'0')}" ${result.status==='blocked'&&result.day===null?'disabled':''}><p class="control-hint">Updates this step and its dependents.</p></div>${modeCard(task,result,plan)}`:`<div class="read-only-date"><span>${dateLabel}</span><strong class="${result.status==='conflict'?'text-danger':''}">${formatDay(result.day)}</strong></div>`;
   const impactList=state.draft&&!state.addressTimingPending?`<div class="detail-section impact-list"><h3>${laterEffects.length} OTHER ${laterEffects.length===1?'CHANGE':'CHANGES'} IN THIS PREVIEW</h3>${laterEffects.map(change=>`<button class="impact-item" data-impact="${change.id}"><span>${change.after.status==='conflict'?'!':change.after.status==='blocked'?'⊘':'↳'}</span><span><strong>${change.title}</strong><small>${impactDescription(change)}</small></span></button>`).join('')||'<p class="empty-small">This change does not move another date.</p>'}</div>`:'';
-  const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);const lag=edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:edge.from==='documents'?'Ready to use':'Same day';return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Design hypothesis · inactive until accepted</small>':`<small>${lag}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
+  const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);const lag=edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:edge.from==='documents'?'Ready to use':'Same day';return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Design hypothesis · review before applying</small>':`<small>${lag}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
   const unlocks=outgoing.length?`<div class="detail-section"><h3>THIS CAN MOVE</h3>${outgoing.map(edge=>`<button class="unlock-item" data-impact="${edge.to}"><span>↳</span>${taskById(edge.to).title}${edge.suggested?'<span class="suggestion-tag">?</span>':''}</button>`).join('')}</div>`:!incoming.length?'<div class="detail-section"><h3>INDEPENDENT STEP</h3><p class="empty-small">Changes elsewhere do not move this task.</p></div>':'';
-  const evidence=state.draft&&task.id!=='bank'?'':task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>Design hypothesis · inactive</span><p>The initial AI plan kept this task independent. I challenged that assumption because branch proximity and the practical timing of account setup may depend on my confirmed address.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<details class="evidence-disclosure"><summary>Why this relationship?</summary><div class="evidence-card"><span>${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div></details>`;
+  const evidence=state.draft&&task.id!=='bank'?'':task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>Design hypothesis</span><p>The initial AI plan kept this task independent. I challenged that assumption because branch proximity and the practical timing of account setup may depend on my confirmed address.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<details class="evidence-disclosure"><summary>Why this relationship?</summary><div class="evidence-card"><span>${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div></details>`;
   const relationships=state.draft?'':`${dependencies}${unlocks}`;
   const bottom=task.kind==='complete'?'<p>Completed in this sample plan.</p>':task.kind==='milestone'?`<p>${formatDay(READY_BY_DAY)} is fixed. The planner checks whether the steps before it can meet that deadline.</p>`:'';
   const timing=state.addressTimingPending&&task.id==='housing'?addressTimingQuestion(plan):'';
@@ -478,7 +478,7 @@ function reopenLink(){
   state.lastEdited='bank';
   render();
   $('#accept-link')?.focus({preventScroll:true});
-  announce('Address prerequisite reopened as an inactive design hypothesis.');
+  announce('Address prerequisite reopened as a design hypothesis.');
 }
 
 function undo(){
