@@ -1,82 +1,90 @@
-# MoveGraph product review
+# Move-planning prototype: product review
 
 ## Product premise
 
-MoveGraph turns a relocation checklist into a dependency model. It comes from Hayk’s experience living in seven cities over four years: moving tasks rarely fail in isolation, but ordinary checklists hide what a changed date will affect.
+The prototype turns a relocation checklist into a dependency model. It comes from Hayk’s experience living in seven cities over four years: moving tasks rarely fail in isolation, but ordinary checklists hide what a changed date will affect.
 
-The prototype now tests a broader and more useful question: **When any planned date changes, what moves after it, what stays put, and where does a person need to decide?**
+The central question is: **When any planned date changes, what should move, what must stay fixed, and where does the person need to decide?**
 
-The dates, notes, and Tokyo-to-San Francisco scenario are illustrative planning data. They are not official relocation requirements or a record of an actual booking.
+The Tokyo-to-San Francisco route, dates, notes, and bookings are illustrative planning data. They are not official relocation requirements or a record of Hayk’s actual move.
 
-## Scheduling model
+## Constraint hierarchy
 
-The product uses one date meaning for tasks: **planned completion**. Arrival is separately labeled as a deadline. This avoids treating a changed constraint as if work had already been rescheduled.
+The revised scheduler makes three levels of constraint explicit:
 
-Every editable task is one of three types:
+1. **Ready by 17 October is a hard deadline.** The milestone stays on the 17th even when the projected work would finish later. A late projection blocks the plan instead of moving the hard deadline.
+2. **Arrival on 18 October is fixed context.** The booked date explains why the readiness deadline matters, but it is not a task that propagation can move.
+3. **Task spacing is negotiable.** After a delay, the person chooses the time a task actually needs. The planner may group at most two planned preparation tasks on one day to preserve the hard deadline.
 
-- **Source date.** It has no controlling prerequisite. Housing confirmation is the clearest example.
-- **Follows dependencies.** It uses the earliest valid date produced by its prerequisites and stated buffer.
-- **Date set by you.** Editing an automatic date pins it. Future upstream changes preserve that date until it becomes impossible.
+Every editable task also exposes the source of its date:
 
-Fixed appointments never move automatically. Completed tasks and calculated milestones are read-only.
+- **Start date:** no controlling prerequisite, as with Housing.
+- **Automatic:** the earliest valid date from active prerequisites and the chosen timing.
+- **Pinned:** a date set by the person that stays fixed until changed or returned to automatic scheduling.
+- **Fixed appointment:** moves only after an explicit request; the prototype never claims that the external booking changed.
+- **Suggested · inactive:** an AI-proposed relationship with no scheduling effect until accepted.
 
-Propagation is directional. A change affects the edited task and its descendants only. Earlier tasks and independent branches remain stable. If a pinned date is earlier than its dependencies allow, MoveGraph preserves the requested date as the user’s intent, shows the earliest valid date, and blocks downstream results until the conflict is repaired.
+Propagation runs forward. Earlier tasks and independent branches remain stable. Impossible pins remain visible with the limiting dependency or deadline and block application until repaired.
 
 ## End-to-end walkthrough completed
 
-1. **Understand the baseline.** The plan opens on track. Housing is due on 10 October, the address pack follows on 12 October, the check-in is fixed on 13 October, and the plan is ready on 17 October—one day before the booked 18 October arrival.
-2. **Select the object first.** Any editable node, or Step row on a narrow screen, opens the same date control. There is no separate simulation launcher.
-3. **Edit a later task.** Moving Internet from 14 to 16 October creates a manual pin. Housing stays on 10 October, the Address Pack stays on 12 October, and Readiness moves from 17 to 19 October.
-4. **Return to the system rule.** “Follow dependencies again” removes that pin and returns Internet to its earliest valid date, 14 October.
-5. **Expose an impossible intent.** Pinning Internet to 13 October preserves the requested date, explains that 14 October is the earliest valid date, and blocks Readiness. The user can use the earliest date or return the task to automatic scheduling.
-6. **Change an upstream source.** Moving Housing from 10 to 12 October shifts the Address Pack from 12 to 14 October and Internet from 14 to 16 October. The 13 October check-in and 18 October arrival remain fixed; the check-in becomes a visible conflict.
-7. **Compare recovery plans.** Option A requests a new check-in on 15 October and makes the plan ready on 19 October, one day after arrival. Option B restores Housing to 10 October, preserves the 13 October appointment, and keeps a one-day arrival buffer. Neither option is preselected.
-8. **Review, apply, and undo.** The before/after review includes date changes and scheduling-mode changes. Applying updates only the in-memory demo plan; Undo restores the prior dates and pin states.
-9. **Review AI input.** “Compare local banking options” is initially independent, so research can happen before the exact address is ready. Selecting it reveals a dotted, inactive suggestion asking whether the address should become a prerequisite for comparing nearby branches.
+1. **Read the baseline.** Housing is due 10 October, Address Pack follows on the 12th, Check-in is fixed on the 13th, Internet follows on the 14th, and the plan is ready on the hard 17 October deadline for arrival on the 18th.
+2. **Edit the object.** Selecting an editable node opens one native date field. There is no separate simulation launcher.
+3. **Delay Housing.** Moving Housing from the 10th to the 12th opens a decision before the scheduler commits to a chain reaction.
+4. **State the missing assumption.** The interface asks how much time the Address Pack actually needs: the same day, one day later, or two days later. Each feasible card previews the exact date, any same-day workload, the check-in consequence, and readiness on the 17th.
+5. **Compare feasible outcomes.** Same day keeps Address Pack on the 12th and the existing Check-in on the 13th. One day later places Address Pack on the 13th, groups Check-in and Internet on the 14th, and requests a new check-in slot. Two days later places Address Pack and Internet together on the 14th and requests Check-in on the 15th. All three options keep the peak load at two tasks and can meet the 17th; options that require rebooking remain conditional until the requested slot is confirmed.
+6. **Choose the full two days.** This option demonstrates that the planner can preserve a realistic task duration by parallelizing compatible work while still meeting the hard deadline.
+7. **Review, apply, and undo.** The review shows exact before/after dates and timing changes. Applying updates the in-memory demo plan. Undo restores the previous dates and scheduling modes.
+8. **Guard a later task.** Moving Internet from the 14th to the 15th creates a deadline conflict because the plan needs three days after Internet to finish. The projected finish is the 18th, but Ready remains fixed on the 17th. **Use 14 Oct** supplies the latest safe date, and **Follow dependencies** removes the manual pin.
+9. **Review AI input.** Banking remains independent by default. Selecting it reveals a dotted, inactive suggestion that the address could improve a nearby-branch comparison. The person can preview the link or keep the task independent before any change is applied.
 
 ## Feedback implemented
 
 | Feedback | Product response |
 | --- | --- |
-| The interface repeated its story and state | Replaced the sidebar and utility bar with one compact header, removed duplicated inspector values and actions, and kept the personal story in one sentence plus About. |
-| A hypothetical seven-day action is counterintuitive | Removed the scenario launcher. Selecting a step and editing its date now creates the preview directly. |
-| Later events should be editable | Housing, Address Pack, Check-in, Internet, and Bank all expose date controls; flexible dates can also be dragged on the timeline. |
+| “Ready” cannot occur after move-in | Replaced the movable readiness result with a hard 17 October deadline. Late work now blocks the plan and shows its projected finish. |
+| A Housing delay does not prove the Address Pack needs the same delay | Added a direct question with same-day, one-day, and two-day choices. The person supplies the missing duration assumption. |
+| Recovery should use the remaining capacity intelligently | The scheduler can group compatible work, capped at two planned preparation tasks per day, and exposes that workload before selection. |
+| A valid recovery must preserve readiness | Only options that finish by the 17th and stay within capacity are available. A post-deadline plan cannot be applied. |
+| Fixed appointments should not shift silently | Any changed Check-in is labeled as a request that still needs confirmation. |
+| A hypothetical seven-day action is counterintuitive | Removed the scenario launcher. Selecting a step and editing its date creates the preview directly. |
+| Later events should be editable | Housing, Address Pack, Check-in, Internet, and Bank expose date controls. |
 | A later edit should not rewrite the past | Propagation runs only downstream. Upstream and independent dates stay unchanged. |
-| Upstream edits must still affect later work | Automatic descendants recalculate from their dependencies and buffers. |
-| User-set dates need predictable behavior | Editing an automatic date creates a visible manual pin with a “Follow dependencies again” action. |
-| Conflicts should remain honest | Impossible pins stay visible with their earliest valid date; descendants block until the conflict is repaired. |
-| The timeline should teach the model | It appears after an edit, when comparison is useful. Saved dates remain as dashed ghosts beside the preview. |
-| Direct manipulation needed a precise alternative | Flexible dates support timeline drag; every editable task has one native date field for keyboard and exact input. Redundant sliders and plus/minus controls were removed. |
-| Fixed dates should not shift silently | The check-in is not draggable and is labeled as a fixed appointment. Rescheduling is explicit in the inspector. |
-| AI structure should remain advisory | Inactive suggestions are omitted from the default dependency map. Selecting Banking reveals the proposed link, explains why the address may matter, and lets the user preview its consequence before applying it. |
-| Mobile should remain usable | Narrow screens start in the linear Steps view, keep date-edit cues, and have no page-level horizontal overflow. |
-| Changes should be safe | All edits are staged, reviewed before apply, and immediately undoable. |
+| User-set dates need predictable behavior | Editing an automatic date creates a visible pin with a **Follow dependencies** action. |
+| Conflicts should remain honest | Impossible dates stay visible with the earliest or latest valid date; the plan cannot be applied until repaired. |
+| The timeline should teach the model | It appears after an edit, with saved dates shown beside the preview. |
+| AI structure should remain advisory | Suggested links are dotted and inactive. Preview and apply remain separate human decisions. |
+| Changes should feel safe | All edits are staged, reviewed before apply, and immediately undoable. |
+| Mobile should remain usable | Narrow screens use a linear Steps view with the same editing and status information and no page-level horizontal overflow. |
 
 ## Current design principles
 
-1. **Edit the object, not a separate mode.** The event itself is the entry point to change.
-2. **Propagate forward only.** A downstream change never rewrites an earlier event.
-3. **Preserve explicit intent.** Manual dates stay pinned until changed, reset, or shown to be impossible.
-4. **Make provenance visible.** Each date states whether it is automatic, set by the user, fixed, independent, or calculated.
-5. **Never hide a broken dependency.** Conflicts remain visible and block conclusions that cannot be trusted.
-6. **Keep AI advisory.** Suggested structure cannot change the schedule until a person accepts it.
-7. **Preview before commit.** Every edit is staged, reviewable, and reversible.
+1. **Protect the declared outcome.** Ready by 17 October is invariant; a plan either meets it or needs repair.
+2. **Ask for the assumption that changes the answer.** The Address Pack duration belongs to the person planning the move.
+3. **Show the cost of compression.** Same-day work, grouped tasks, and rebooking requests appear before selection.
+4. **Edit the object.** The event itself is the entry point to change.
+5. **Propagate forward.** A downstream change never rewrites an earlier event.
+6. **Preserve explicit intent.** Manual dates stay pinned until changed, reset, or shown to violate a dependency or deadline.
+7. **Make provenance visible.** Each date states whether it is automatic, pinned, fixed, independent, complete, or a deadline.
+8. **Keep AI advisory.** A suggestion cannot alter the schedule without review.
+9. **Preview before commit.** Every change is staged, reviewable, and reversible.
 
-## Three-minute-ready product path
+## Three-minute-ready path
 
-1. Open with the personal problem: seven cities in four years taught Hayk that a move is a system, not a checklist.
-2. Select Housing and change 10 October to 12 October.
-3. Show the automatic Address Pack and Internet dates moving while the fixed check-in stays on 13 October and the booked 18 October arrival remains unchanged.
-4. Compare the two transparent recovery plans by required action and arrival buffer.
-5. Apply one option and undo it.
-6. Select Internet, move 14 October to 16 October, and show that earlier dates stay unchanged while Readiness moves to 19 October.
-7. Use “Follow dependencies again” to remove the pin.
-8. Optional closing trust moment: inspect the inactive address-to-banking suggestion and decide whether research should remain independent.
+1. Introduce the personal problem: seven cities in four years taught Hayk that a move is a system rather than a checklist.
+2. Establish Ready by 17 October as the hard deadline and the 18 October arrival as context.
+3. Change Housing from the 10th to the 12th.
+4. Compare the same-day, one-day, and two-day Address Pack choices.
+5. Choose **2 days later**. Show Address Pack and Internet grouped on the 14th, the Check-in request on the 15th, and readiness on the 17th conditional on that external confirmation.
+6. Review the exact change, apply it, and undo it.
+7. Move Internet from the 14th to the 15th to demonstrate the deadline guard, then select **Use 14 Oct** and **Follow dependencies**.
+8. Inspect the inactive address-to-banking suggestion to show how AI remains advisory.
+9. Close with AI’s role in the process and the next research step.
 
-The recording-ready click sequence and timed pitch are maintained in `DEMO_SCRIPT.md`.
+The recording-ready click sequence and timed narration are in `DEMO_SCRIPT.md`.
 
 ## Why arbitrary event creation remains outside this prototype
 
-Adding a real event is a modeling flow, not a single text field. Honest propagation would need the step name, date meaning, fixed-versus-flexible behavior, prerequisite steps, buffer after each prerequisite, and whether each relationship is confirmed or suggested.
+Adding a real event is a modeling flow rather than a single text field. Honest propagation would need the step name, date meaning, fixed-versus-flexible behavior, prerequisite steps, timing after each prerequisite, daily capacity, and whether each relationship is confirmed or suggested.
 
-That is a logical next slice. This prototype focuses on the interaction that must work first: changing dates across an existing dependency model without silently rewriting the user’s plan.
+That is the next product slice after research. This prototype first proves the critical interaction: changing dates across an existing dependency model while keeping a hard deadline, task capacity, and human decisions visible.

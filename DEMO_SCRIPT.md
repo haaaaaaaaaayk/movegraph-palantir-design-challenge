@@ -1,52 +1,57 @@
-# Three-minute move planner video
+# Three-minute product demo
 
-## What the assignment asks for
+## Assignment fit
 
-Use **Lens B: Make it click**. Present this as a pitch for a personally meaningful solution, while showing the working product as proof. The video must explain the problem, the design approach and decisions, the role of AI, the most important interaction, and what you would do next. Keep the unlisted YouTube video under three minutes.
+Use **Lens B: Make it click**. Present a personally meaningful problem and a working interaction as evidence of the design thinking. The recording should explain the problem, the design approach and decisions, how AI contributed, the most important interaction, and what would come next. Keep the unlisted YouTube video under three minutes.
+
+This path demonstrates the qualities the Palantir role emphasizes: simplifying a data-dense system, designing the end-to-end interaction down to its recovery states, and explaining decisions and assumptions clearly enough to collaborate with product and engineering partners.
 
 ## Before recording
 
 - Use a desktop browser at 100% zoom, ideally around 1440 × 900.
-- Reload immediately before recording. The plan should say **On track**, with Housing on 10 Oct and arrival on 18 Oct.
-- Keep the cursor visible and move it deliberately. Do not read every label on screen.
-- Use the exact date field for the demo. The timeline drag interaction exists, but the field is clearer on video.
+- Reload immediately before recording. Confirm the header says **Tokyo → San Francisco · Arrive 18 Oct**, the plan says **On track**, Housing is 10 Oct, and **Ready by 17 Oct** is visible.
+- Housing is selected on load. Keep the cursor visible and move it deliberately.
+- Use the date field rather than dragging the timeline; it is easier to follow in a short recording.
+- Rehearse once so scrolling does not cover the object you are describing.
 
-## Exact actions
+## Exact click sequence
 
-| Time | What to do | What the viewer should notice |
+| Time | Exact action | What the viewer should notice |
 | --- | --- | --- |
-| 0:00–0:32 | Do not click. Briefly trace the three stages and their arrows. Point to **Start date**, **Automatic**, **Fixed appointment**, **Suggested · inactive**, and **Calculated**. | The graph exposes dependencies and the source of each date. The header keeps the 18 Oct arrival visible. |
-| 0:32–1:03 | Housing is already selected. Click **Planned completion**, choose **12 October 2026**, then press Tab. Scroll just enough to show **Timeline preview**, then return to the blue banner. | Address Pack moves 12 → 14 Oct; Internet moves 14 → 16 Oct. The 13 Oct fixed check-in becomes a conflict. Arrival stays on 18 Oct. Saved and preview dates remain visible together. |
-| 1:03–1:38 | Click **Compare recovery plans**. Pause on both cards, then click **Option A · keep earlier work**. | Option A requests check-in on 15 Oct and makes Readiness 19 Oct, one day after arrival. Option B restores Housing to 10 Oct and keeps a one-day buffer. Each assumption is explicit. |
-| 1:38–1:53 | Click **Apply option A**, then click **Undo change** at the top right. | The app records **Rebooking needed**; it does not claim a booking changed. Undo restores all dates and modes. |
-| 1:53–2:12 | Click **Arrange home internet**. Change its date from 14 to **16 October 2026**. Then click **Follow dependencies**. | Earlier work stays put; only Readiness moves to 19 Oct. Internet stays pinned until it returns to automatic scheduling. |
-| 2:12–2:31 | Click **Compare local banking options**. Point to the dotted edge, click **Preview dependency**, point to **Review change**, then click **Reset preview**. | The illustrative AI suggestion is inactive by default. Preview changes only the draft; saving still requires review and apply. |
-| 2:31–2:56 | Leave the restored baseline visible while explaining how Codex was used and what you would build next. | End on a calm, on-track plan. |
+| 0:00–0:28 | Do not click. Trace Housing → Address Pack → Check-in and Internet → Ready by 17 Oct. Point to **Arrive 18 Oct** in the header. | A move is modeled as dependencies. Readiness on the 17th is the hard deadline; arrival on the 18th is context. |
+| 0:28–0:48 | In the Housing inspector, click **Planned completion**. Choose **12 October 2026**, then press Tab or click outside the field. | The provisional chain reveals why keeping every old gap would fail, then asks for the duration that was previously only an assumption. |
+| 0:48–1:17 | Pause on **Same day**, **1 day later**, and **2 days later**. Point to the date, named grouped tasks, Internet timing, and check-in consequence on each card. Click **2 days later**. | The user chooses the real task duration. The selected plan puts Address Pack and Internet on 14 Oct, requests Check-in on 15 Oct, caps the day at two tasks, and meets 17 Oct if the new slot is confirmed. |
+| 1:17–1:38 | Scroll to the blue unsaved-change banner and click **Review change**. Pause on the before/after rows and the readiness result. Click **Apply this plan**. Scroll to the top and click **Undo change**. | The plan is reviewable before commit. Rebooking is still a request, and the entire change is reversible. |
+| 1:38–1:58 | Click **Arrange home internet**. Change **Planned completion** from 14 to **15 October 2026**. Point to the deadline warning, then click **Use 14 Oct**. Click **Follow dependencies**. | A later task is editable, but 15 Oct would make the projected finish the 18th. Ready stays fixed on the 17th, the invalid plan cannot be applied, and one click restores the latest safe date. |
+| 1:58–2:17 | Click **Compare local banking options**. Point to the dotted line and **Suggested · inactive**. Click **Preview dependency**, then click **Reset preview** in the blue banner. | AI proposes structure. Previewing stages its effect, while the saved plan stays unchanged until Apply. |
+| 2:17–2:50 | Scroll to the top and click **About**. Point to **Constraint hierarchy** and **How AI contributed** while delivering the final lines. Click **Back to the plan** to end. | The demo closes with the design rationale and returns to a trustworthy baseline. |
 
 ## Spoken script
 
-**0:00–0:32 — Personal problem and product model**
+**0:00–0:28 — Personal problem and system model**
 
-“Hey, I’m Hayk. Over four years I lived in seven cities, most recently moving from Tokyo to San Francisco. This is the tool I wish I’d had. A move looks like a checklist, but behaves like a dependency system. Housing unlocks an address pack, which unlocks check-in and internet. My flight is booked for October eighteenth, so arrival is a fixed constraint.”
+“Hi, I’m Hayk. In four years, I’ve lived in seven cities, most recently moving from Tokyo to San Francisco. This is a tool I wish I’d had. A move looks like a checklist, but behaves like a dependency system. Housing unlocks an address pack, then check-in and internet. I arrive on October eighteenth, but I must be ready by the seventeenth. That deadline anchors the plan.”
 
-**0:32–1:03 — A two-day delay**
+**0:28–1:17 — Delay, decision, and parallel work**
 
-“Housing is due October tenth. Let’s say it slips two days. I edit that event to the twelfth. The address pack moves from the twelfth to the fourteenth, and internet moves to the sixteenth. Check-in stays fixed on the thirteenth, so the app surfaces a conflict. Readiness is blocked, while the timeline preserves the saved dates beside my preview.”
+“Housing was due on October tenth. Say confirmation slips two days. The provisional chain shows why keeping every old gap would fail. Then the app asks what it could not infer: does the address pack need the same day, one day, or two days? Each choice shows the dates and workload.
 
-**1:03–1:53 — Decide, apply, and undo**
+“I’ll keep the full two days. The planner groups the address pack and internet on the fourteenth and requests check-in on the fifteenth. The plan meets the seventeenth if that slot is confirmed, so the interface keeps the uncertainty visible. Parallel work is capped at two planned tasks in one day.”
 
-“Now I can compare two recovery plans. I can keep the delay and request check-in on the fifteenth, becoming ready one day after arrival. Or I can protect the appointment by securing housing on the tenth, restoring a one-day buffer. Each option states its assumption before I commit. I’ll apply the first. It records that rebooking is needed; it doesn’t pretend the booking changed. Undo restores the plan.”
+**1:17–1:38 — Review, apply, and undo**
 
-**1:53–2:12 — Change a later event**
+“Before committing, I can review every difference. Check-in remains a request because this prototype cannot change an external booking. I’ll apply the plan, then undo it. The change is explainable and reversible.”
 
-“A later deadline can change too. I pin internet to the sixteenth; earlier steps stay untouched, and only readiness moves. ‘Follow dependencies’ releases my override. Changes flow forward, not backward.”
+**1:38–1:58 — Guard a later deadline**
 
-**2:12–2:31 — Keep AI advisory**
+“Later tasks are editable too. Moving internet to the fifteenth would make the work finish on the eighteenth. The app keeps readiness fixed, blocks that plan, and offers the latest safe date: October fourteenth. Then I return the task to automatic scheduling.”
 
-“AI suggested that choosing a bank might depend on my address. I kept that link dotted and inactive. I can preview it, but saving still requires my review and approval. The person remains in control.”
+**1:58–2:17 — Keep AI advisory**
 
-**2:31–2:56 — How AI helped and what is next**
+“AI suggested that banking might depend on my address. The relationship stays dotted and inactive. Previewing stages its effect, while my saved plan stays unchanged until I review and apply it. The suggestion supports my judgment.”
 
-“I used Codex to explore alternatives, implement and test the dependency engine, and critique the interaction. I chose to remove the confusing seven-day simulation, let people edit planned steps directly, and add preview and undo. The scheduling logic stays explicit and explainable. Next, I’d add event creation and test this with people planning real international moves.”
+**2:17–2:50 — Process and next step**
 
-The spoken script is 310 words, leaving a buffer for pauses and clicks while staying below three minutes at a natural pace.
+“I used Codex to explore rules, prototype interactions, test edge cases, and critique the experience. The final logic is explicit: the deadline is fixed, spacing is negotiable, and tradeoffs are visible. Next, I’d test the timing choices with people planning real international moves, then use their needs to shape event creation and calendar integration.”
+
+The spoken script is approximately 332 words. At 130–140 words per minute it runs about 2:22–2:33, leaving time for pauses and clicks while remaining under three minutes.

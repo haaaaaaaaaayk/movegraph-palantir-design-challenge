@@ -1,4 +1,4 @@
-import {INITIAL_PLAN,TASKS,DATE_FIELDS,calculate,edgesFor,impacts,connectedIds,recoveries,formatDay,validatePlan} from './model.mjs';
+import {INITIAL_PLAN,TASKS,DATE_FIELDS,ARRIVAL_DAY,READY_BY_DAY,MAX_TASKS_PER_DAY,calculate,edgesFor,impacts,connectedIds,addressTimingOptions,dailyWorkload,formatDay,validatePlan} from './model.mjs';
 
 const $=selector=>document.querySelector(selector);
 const icons={
@@ -26,14 +26,14 @@ function icon(name,cls=''){
   return `<svg class="ui-icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.file}</svg>`;
 }
 
-const compactView=matchMedia('(max-width: 760px)');
+const compactView=matchMedia('(max-width: 980px)');
 const state={
   plan:{...INITIAL_PLAN},
   draft:null,
   selected:'housing',
   lastEdited:null,
   undo:null,
-  choice:null,
+  addressTimingPending:false,
   zoom:1,
   view:compactView.matches?'list':'map',
   focused:false
@@ -48,12 +48,11 @@ const editableTask=id=>Boolean(DATE_FIELDS[id]);
 const canFollow=(id,plan=current())=>id==='address'||id==='internet'||(id==='bank'&&plan.bankDependency);
 const canDrag=task=>task.kind==='flexible'&&editableTask(task.id);
 
-function bufferLabel(day){
-  if(day===null||day===undefined) return 'Ready date unresolved';
-  const delta=18-day;
-  if(delta===0) return 'Ready on arrival day';
-  if(delta>0) return `${delta}-day buffer before arrival`;
-  return `${Math.abs(delta)} day${Math.abs(delta)===1?'':'s'} after arrival`;
+function readinessLabel(schedule,plan){
+  if(!schedule) return `Ready by ${formatDay(READY_BY_DAY)}`;
+  if(schedule.ready.status==='planned') return plan?.rebooked?`Ready by ${formatDay(READY_BY_DAY)} if check-in is confirmed`:`Ready by ${formatDay(READY_BY_DAY)}`;
+  if(schedule.ready.projectedDay) return `Would finish ${formatDay(schedule.ready.projectedDay)} · misses ${formatDay(READY_BY_DAY)}`;
+  return `${formatDay(READY_BY_DAY)} deadline unresolved`;
 }
 
 function announce(message,visible=true){
@@ -69,24 +68,24 @@ function announce(message,visible=true){
 
 function statusLabel(task,result,plan=current()){
   if(result.status==='complete') return 'Complete';
+  if(result.status==='conflict'&&result.constraint==='deadline') return `Misses ${formatDay(READY_BY_DAY)} deadline`;
   if(result.status==='conflict') return 'Date conflict';
-  if(result.status==='blocked') return 'Blocked by conflict';
-  if(result.status==='late') return 'After arrival';
+  if(result.status==='blocked') return task.id==='ready'?`${formatDay(READY_BY_DAY)} deadline at risk`:'Blocked by conflict';
   if(result.status==='review') return 'Suggested · inactive';
   if(result.mode==='manual') return 'Pinned date';
   if(result.mode==='automatic') return 'Automatic';
   if(result.mode==='fixed') return plan.rebooked?'Rebooking needed':'Fixed appointment';
   if(result.mode==='source') return task.id==='bank'?'Independent':'Start date';
-  if(result.mode==='milestone') return 'Calculated';
+  if(result.mode==='deadline') return 'Fixed deadline';
   return 'Planned';
 }
 
 function statusMark(status){
-  return status==='complete'?'✓':status==='conflict'||status==='late'?'!':status==='blocked'?'⊘':status==='review'?'◇':'○';
+  return status==='complete'?'✓':status==='conflict'?'!':status==='blocked'?'⊘':status==='review'?'◇':'○';
 }
 
 function modeName(mode){
-  return {automatic:'Automatic',manual:'Set by you',source:'Source date',fixed:'Fixed',milestone:'Calculated',completed:'Complete'}[mode]||'Planned';
+  return {automatic:'Automatic',manual:'Set by you',source:'Source date',fixed:'Fixed',deadline:'Fixed deadline',completed:'Complete'}[mode]||'Planned';
 }
 
 function renderGraph(){
@@ -142,7 +141,7 @@ function selectTask(id){
   state.selected=id;
   state.focused=true;
   render();
-  if(innerWidth<=760) $('#inspector').scrollIntoView({behavior:'smooth',block:'start'});
+  if(innerWidth<=980) $('#inspector').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function fitGraph(){
@@ -167,10 +166,49 @@ function modeCard(task,result,plan){
   return '';
 }
 
+function addressTimingQuestion(plan){
+  const options=addressTimingOptions(plan,state.plan);
+  if(!options.length) return `<div class="timing-question"><span>NO FEASIBLE SCHEDULE</span><h3>These dates cannot protect ${formatDay(READY_BY_DAY)}</h3><p>Choose an earlier housing date or revise a pinned task before continuing.</p></div>`;
+  return `<div class="timing-question" role="group" aria-labelledby="timing-title"><span>DECISION NEEDED</span><h3 id="timing-title">How much time do you need for the address pack?</h3><p>${formatDay(READY_BY_DAY)} is fixed. Each choice shows the work required to protect it.</p><div class="timing-options">${options.map(option=>{const dates=calculate(option.plan);const appointment=option.requiresRebooking?`Request check-in for ${formatDay(dates.checkin.day)}`:option.plan.rebooked?`Keep the requested check-in on ${formatDay(dates.checkin.day)}`:`Keep check-in on ${formatDay(dates.checkin.day)}`;const internetTiming=option.plan.internetLag===0?'Internet starts the same day as the address pack':`Internet starts ${option.plan.internetLag} day${option.plan.internetLag===1?'':'s'} later`;const groupedTasks=option.parallelTasks.map(title=>title.replace('Confirm your housing','Housing').replace('Prepare address pack','Address pack').replace('Housing office check-in','Check-in').replace('Arrange home internet','Internet')).join(' + ');return `<button class="timing-option ${option.recommended?'recommended':''}" data-address-lag="${option.lag}"><span class="timing-option-top"><strong>${option.label}</strong>${option.recommended?'<em>Recommended</em>':''}</span><span class="timing-date">Address pack · ${formatDay(dates.address.day)}</span><small>${option.description}</small><span class="timing-assumption">${appointment} · ${internetTiming}</span>${option.parallelDay?`<span class="parallel-note">${formatDay(option.parallelDay)} · ${groupedTasks}</span>`:''}<span class="timing-result">${readinessLabel(dates,option.plan)} <b>Preview this plan →</b></span></button>`;}).join('')}</div></div>`;
+}
+
+function activeTimingSummary(plan){
+  if(!state.draft||plan.housingDay===state.plan.housingDay||state.addressTimingPending) return '';
+  const schedule=calculate(plan);
+  const protectedDeadline=schedule.ready.status==='planned'&&schedule.ready.projectedDay<=READY_BY_DAY;
+  const tasks=[['Confirm housing',schedule.housing.day],['Prepare address pack',schedule.address.day],['Housing check-in',schedule.checkin.day],['Arrange internet',schedule.internet.day]];
+  const loads=tasks.filter(([,day])=>Number.isInteger(day)).reduce((map,[title,day])=>{(map[day]??=[]).push(title);return map;},{});
+  const parallel=Object.entries(loads).find(([,items])=>items.length>1);
+  const grouped=parallel?`<p><strong>${formatDay(Number(parallel[0]))} · ${parallel[1].length} tasks</strong><br>${parallel[1].join(' · ')}</p>`:'';
+  const pendingConfirmation=protectedDeadline&&plan.rebooked;
+  return `<div class="deadline-strategy ${protectedDeadline?'':'at-risk'}"><span>${!protectedDeadline?'DEADLINE AT RISK':pendingConfirmation?'PENDING CHECK-IN CONFIRMATION':'DEADLINE PROTECTED'}</span><strong>${readinessLabel(schedule,plan)}</strong>${grouped}<small>${protectedDeadline?(pendingConfirmation?`The requested check-in on ${formatDay(schedule.checkin.day)} is not confirmed yet.`:'The existing check-in stays unchanged.'):'Resolve the highlighted date before applying this plan.'}</small></div>`;
+}
+
 function conflictMarkup(task,result,plan){
+  if(result.status==='conflict'&&Number.isInteger(result.earliest)&&Number.isInteger(result.latest)&&result.earliest>result.latest) return `<div class="conflict-note">${icon('info')}<div><strong>No valid date remains</strong><p>${task.title} cannot start before ${formatDay(result.earliest)}, but it must finish by ${formatDay(result.latest)}. Adjust the address-pack timing first.</p><div class="conflict-actions"><button class="button button-outline" id="inspect-prerequisite">Review address pack</button></div></div></div>`;
+  if(result.status==='conflict'&&result.constraint==='deadline') return `<div class="conflict-note">${icon('info')}<div><strong>This misses your ready-by deadline</strong><p>${task.title} must be complete by ${formatDay(result.latest)} to keep ${formatDay(READY_BY_DAY)} available for final preparation.</p><div class="conflict-actions"><button class="button button-outline" id="use-latest">Use ${formatDay(result.latest)}</button>${canFollow(task.id,plan)?'<button class="button button-quiet" id="conflict-reset">Reset to automatic</button>':''}</div></div></div>`;
   if(result.status==='conflict') return `<div class="conflict-note">${icon('info')}<div><strong>Date conflict</strong><p>You chose ${formatDay(result.day)}, but ${formatDay(result.earliest)} is the earliest valid date. Earlier steps were left unchanged.</p><div class="conflict-actions"><button class="button button-outline" id="use-earliest">Use ${formatDay(result.earliest)}</button>${canFollow(task.id,plan)?'<button class="button button-quiet" id="conflict-reset">Reset to automatic</button>':''}</div></div></div>`;
-  if(result.status==='blocked') return `<div class="conflict-note">${icon('info')}<div><strong>Blocked by an earlier conflict</strong><p>Resolve the highlighted prerequisite before this date can be trusted.</p></div></div>`;
+  if(result.status==='blocked') return `<div class="conflict-note">${icon('info')}<div><strong>${task.id==='ready'?`${formatDay(READY_BY_DAY)} deadline at risk`:'Blocked by an earlier conflict'}</strong><p>${task.id==='ready'?'A prerequisite misses the fixed readiness deadline. Adjust the highlighted task before applying this plan.':'Resolve the highlighted prerequisite before this date can be trusted.'}</p></div></div>`;
   return '';
+}
+
+function workloadMarkup(task,plan){
+  const overload=dailyWorkload(plan).find(item=>item.day===calculate(plan)[task.id].day&&item.count>MAX_TASKS_PER_DAY);
+  if(!overload) return '';
+  return `<div class="workload-note">${icon('info')}<div><strong>${overload.count} tasks on ${formatDay(overload.day)}</strong><p>${overload.tasks.join(', ')}. Move one task so the day has no more than ${MAX_TASKS_PER_DAY}.</p></div></div>`;
+}
+
+function impactDescription(change){
+  if(change.after.status==='conflict'&&change.after.constraint==='deadline') return `Must finish by ${formatDay(change.after.latest)} to protect the deadline`;
+  if(change.after.status==='conflict') return `Conflict · earliest ${formatDay(change.after.earliest)}`;
+  if(change.after.status==='blocked') return `${formatDay(READY_BY_DAY)} deadline at risk`;
+  if(change.beforeLag!==undefined&&change.beforeLag!==change.afterLag&&change.before.day===change.after.day){
+    const before=change.beforeLag===0?'same day':`${change.beforeLag} day${change.beforeLag===1?'':'s'} after`;
+    const after=change.afterLag===0?'same day':`${change.afterLag} day${change.afterLag===1?'':'s'} after`;
+    return `Timing: ${before} → ${after}`;
+  }
+  if(change.before.day===change.after.day&&change.before.mode!==change.after.mode) return `${modeName(change.before.mode)} → ${modeName(change.after.mode)}`;
+  return `${formatDay(change.before.day)} → ${formatDay(change.after.day)}`;
 }
 
 function renderInspector(){
@@ -181,21 +219,26 @@ function renderInspector(){
   const editable=editableTask(task.id)&&inputDay!==null;
   const maxDay=task.id==='housing'?20:31;
   const laterEffects=changes.filter(change=>change.id!==task.id);
-  const dateLabel=result.mode==='fixed'?'Appointment date':result.mode==='milestone'?'Calculated readiness':'Planned completion';
+  const dateLabel=result.mode==='fixed'?'Appointment date':result.mode==='deadline'?'Ready-by deadline':'Planned completion';
 
   const dateEditor=editable?`<div class="date-control"><label for="task-date">${dateLabel}</label><input id="task-date" type="date" min="2026-10-01" max="2026-10-${String(maxDay).padStart(2,'0')}" value="2026-10-${String(inputDay).padStart(2,'0')}" ${result.status==='blocked'&&result.day===null?'disabled':''}><p class="control-hint">Updates this step and its dependents.</p></div>${modeCard(task,result,plan)}`:`<div class="read-only-date"><span>${dateLabel}</span><strong class="${result.status==='conflict'?'text-danger':''}">${formatDay(result.day)}</strong></div>`;
-  const impactList=state.draft?`<div class="detail-section impact-list"><h3>${laterEffects.length} OTHER ${laterEffects.length===1?'CHANGE':'CHANGES'} IN THIS PREVIEW</h3>${laterEffects.map(change=>`<button class="impact-item" data-impact="${change.id}"><span>${change.after.status==='conflict'?'!':change.after.status==='blocked'?'⊘':'↳'}</span><span><strong>${change.title}</strong><small>${change.after.status==='conflict'?`Conflict · earliest ${formatDay(change.after.earliest)}`:change.after.status==='blocked'?'Blocked until the earlier conflict is resolved':`${formatDay(change.before.day)} → ${formatDay(change.after.day)}`}</small></span></button>`).join('')||'<p class="empty-small">This change does not move another date.</p>'}</div>`:'';
-  const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Suggested · inactive until accepted</small>':`<small>${edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:'Ready to use'}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
+  const impactList=state.draft&&!state.addressTimingPending?`<div class="detail-section impact-list"><h3>${laterEffects.length} OTHER ${laterEffects.length===1?'CHANGE':'CHANGES'} IN THIS PREVIEW</h3>${laterEffects.map(change=>`<button class="impact-item" data-impact="${change.id}"><span>${change.after.status==='conflict'?'!':change.after.status==='blocked'?'⊘':'↳'}</span><span><strong>${change.title}</strong><small>${impactDescription(change)}</small></span></button>`).join('')||'<p class="empty-small">This change does not move another date.</p>'}</div>`:'';
+  const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);const lag=edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:edge.from==='documents'?'Ready to use':'Same day';return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Suggested · inactive until accepted</small>':`<small>${lag}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
   const unlocks=outgoing.length?`<div class="detail-section"><h3>THIS CAN MOVE</h3>${outgoing.map(edge=>`<button class="unlock-item" data-impact="${edge.to}"><span>↳</span>${taskById(edge.to).title}${edge.suggested?'<span class="suggestion-tag">?</span>':''}</button>`).join('')}</div>`:!incoming.length?'<div class="detail-section"><h3>INDEPENDENT STEP</h3><p class="empty-small">Changes elsewhere do not move this task.</p></div>':'';
   const evidence=state.draft&&task.id!=='bank'?'':task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>Suggested link · inactive</span><p>This task is independent, so ${formatDay(result.day)} is valid. Your address could improve a nearby-branch comparison.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<details class="evidence-disclosure"><summary>Why this relationship?</summary><div class="evidence-card"><span>${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div></details>`;
   const relationships=state.draft?'':`${dependencies}${unlocks}`;
-  const bottom=task.kind==='complete'?'<p>Completed in this sample plan.</p>':task.kind==='milestone'?'<p>Calculated from the steps before it.</p>':'';
+  const bottom=task.kind==='complete'?'<p>Completed in this sample plan.</p>':task.kind==='milestone'?`<p>${formatDay(READY_BY_DAY)} is fixed. The planner checks whether the steps before it can meet that deadline.</p>`:'';
+  const timing=state.addressTimingPending&&task.id==='housing'?addressTimingQuestion(plan):'';
+  const strategy=task.id==='housing'?activeTimingSummary(plan):'';
 
   $('#inspector').innerHTML=`
     <h2>${task.title}</h2>
     <p class="detail-description">${task.description}</p>
     ${dateEditor}
+    ${timing}
+    ${strategy}
     ${conflictMarkup(task,result,plan)}
+    ${workloadMarkup(task,plan)}
     ${impactList}
     ${relationships}
     ${evidence}
@@ -205,9 +248,12 @@ function renderInspector(){
   $('#reset-automatic')?.addEventListener('click',()=>resetToAutomatic(task.id));
   $('#conflict-reset')?.addEventListener('click',()=>resetToAutomatic(task.id));
   $('#use-earliest')?.addEventListener('click',()=>setTaskDay(task.id,result.earliest));
+  $('#use-latest')?.addEventListener('click',()=>setTaskDay(task.id,result.latest));
+  $('#inspect-prerequisite')?.addEventListener('click',()=>selectTask('address'));
   $('#reopen-link')?.addEventListener('click',reopenLink);
   $('#accept-link')?.addEventListener('click',()=>reviewLink(true));
   $('#dismiss-link')?.addEventListener('click',()=>reviewLink(false));
+  document.querySelectorAll('[data-address-lag]').forEach(element=>element.addEventListener('click',()=>applyAddressTiming(Number(element.dataset.addressLag))));
   $('#task-date')?.addEventListener('change',event=>{
     const input=event.target,match=/^2026-10-(\d{2})$/.exec(input.value),day=match?Number(match[1]):NaN;
     if(!Number.isInteger(day)||day<1||day>maxDay){
@@ -227,9 +273,9 @@ function renderTimeline(){
     const diff=Boolean(state.draft)&&(result.day!==before.day||result.mode!==before.mode||result.status!==before.status);
     const draggable=canDrag(task)&&result.day!==null;
     const point=result.day!==null?`<button class="time-point ${result.status} mode-${result.mode} ${diff?'shifted':''} ${draggable?'draggable-date':''}" data-point="${task.id}" style="left:${position(result.day)}%" aria-label="${task.title}, ${formatDay(result.day)}, ${modeName(result.mode)}${draggable?', drag to change or select for the date field':''}" title="${formatDay(result.day)} · ${modeName(result.mode)}"><span>${String(result.day).padStart(2,'0')}</span>${result.mode==='manual'?icon('pin'):''}</button>`:'<span class="blocked-timeline">Waiting for an earlier conflict</span>';
-    return `<div class="timeline-row"><button class="timeline-label ${state.selected===task.id?'active':''}" data-timeline="${task.id}">${icon(task.icon)}<span>${task.title}<small>${statusLabel(task,result,plan)}</small></span></button><div class="time-grid">${diff&&before.day!==null?`<span class="ghost-date" style="left:${position(before.day)}%" aria-hidden="true"></span>`:''}${point}<span class="arrival-line" style="left:${position(18)}%" aria-hidden="true"></span></div></div>`;
+    return `<div class="timeline-row"><button class="timeline-label ${state.selected===task.id?'active':''}" data-timeline="${task.id}">${icon(task.icon)}<span>${task.title}<small>${statusLabel(task,result,plan)}</small></span></button><div class="time-grid">${diff&&before.day!==null?`<span class="ghost-date" style="left:${position(before.day)}%" aria-hidden="true"></span>`:''}${point}<span class="arrival-line" style="left:${position(ARRIVAL_DAY)}%" aria-hidden="true"></span></div></div>`;
   }).join('');
-  $('.timeline-section').innerHTML=`<div class="timeline-heading"><strong>Timeline preview</strong><span><i class="ghost-key"></i> Saved &nbsp; <i class="new-key"></i> Preview</span></div><div class="timeline-ruler"><span>OCTOBER 2026</span><div>${[1,6,12,18,24,31].map(day=>`<span style="left:${position(day)}%">${String(day).padStart(2,'0')}</span>`).join('')}</div></div>${rows}<div class="timeline-footnote"><span>Drag a flexible date to adjust it.</span><span>Arrival: 18 Oct</span></div>`;
+  $('.timeline-section').innerHTML=`<div class="timeline-heading"><strong>Timeline preview</strong><span><i class="ghost-key"></i> Saved &nbsp; <i class="new-key"></i> Preview</span></div><div class="timeline-ruler"><span>OCTOBER 2026</span><div>${[1,6,12,17,24,31].map(day=>`<span style="left:${position(day)}%">${String(day).padStart(2,'0')}</span>`).join('')}</div></div>${rows}<div class="timeline-footnote"><span>Drag a flexible date to adjust it.</span><span>Ready by ${formatDay(READY_BY_DAY)} · Arrival ${formatDay(ARRIVAL_DAY)}</span></div>`;
   document.querySelectorAll('[data-timeline]').forEach(element=>element.onclick=()=>selectTask(element.dataset.timeline));
   document.querySelectorAll('[data-point]').forEach(element=>{
     const task=taskById(element.dataset.point);
@@ -283,17 +329,21 @@ function render(){
   const focusKey=focusAttributes.find(key=>focused?.hasAttribute(key));
   const focusValue=focusKey?focused.getAttribute(focusKey):null;
   const plan=current(),schedule=calculate(plan),changes=state.draft?impacts(state.plan,plan):[];
-  const conflicts=TASKS.filter(task=>schedule[task.id].status==='conflict');
-  const late=schedule.ready.status==='late',readyDay=schedule.ready.day;
+  const issues=TASKS.filter(task=>schedule[task.id].status==='conflict');
+  const overloads=dailyWorkload(plan).filter(item=>item.count>MAX_TASKS_PER_DAY);
+  const pending=state.addressTimingPending&&Boolean(state.draft);
+  const deadlineAtRisk=schedule.ready.status==='blocked';
+  const confirmationPending=schedule.ready.status==='planned'&&plan.rebooked;
 
-  $('#plan-health').textContent=conflicts.length?`${conflicts.length} date conflict${conflicts.length===1?'':'s'}`:late?'Plan finishes after arrival':state.draft?(changes.length?'Preview ready':'No change yet'):state.undo?'Plan updated':'On track';
-  $('#plan-summary').textContent=conflicts.length?`${conflicts.map(task=>task.title).join(', ')} · earlier steps stayed put`:late?`Ready ${formatDay(readyDay)} · ${bufferLabel(readyDay)}`:`Ready ${formatDay(readyDay)} · ${bufferLabel(readyDay)}`;
-  $('.plan-overview').classList.toggle('warning',Boolean(conflicts.length)||late);
+  $('#plan-health').textContent=pending?'Decision needed':deadlineAtRisk?`Cannot meet ${formatDay(READY_BY_DAY)} with these dates`:issues.length?'Resolve the date conflict':overloads.length?'Daily workload is too high':confirmationPending?'Pending check-in confirmation':state.draft?(changes.length?'Deadline protected':'No change yet'):state.undo?'Plan updated':'On track';
+  $('#plan-summary').textContent=pending?`Choose how much time the address pack needs · ${formatDay(READY_BY_DAY)} stays fixed`:deadlineAtRisk?`${issues.map(task=>task.title).join(', ')} · adjust before applying`:issues.length?`${issues.map(task=>task.title).join(', ')} · readiness is unchanged`:overloads.length?`${overloads[0].count} tasks on ${formatDay(overloads[0].day)} · limit ${MAX_TASKS_PER_DAY}`:confirmationPending?`Ready by ${formatDay(READY_BY_DAY)} if check-in on ${formatDay(schedule.checkin.day)} is confirmed`:`Ready by ${formatDay(READY_BY_DAY)} · arrival ${formatDay(ARRIVAL_DAY)}`;
+  $('.plan-overview').classList.toggle('warning',Boolean(issues.length||overloads.length)&&!pending);
+  $('.plan-overview').classList.toggle('decision',pending);
   $('#undo-button').hidden=!state.undo;
   $('#simulation-banner').hidden=!state.draft;
   if(state.draft){
-    $('#simulation-caption').textContent=draftSummary(changes);
-    $('#banner-compare').textContent=conflicts.length?(conflicts.length===1&&conflicts[0].id==='checkin'?'Compare recovery plans':'Go to conflict'):'Review change';
+    $('#simulation-caption').textContent=pending?`Housing moved to ${formatDay(plan.housingDay)} · protect ${formatDay(READY_BY_DAY)}`:draftSummary(changes);
+    $('#banner-compare').textContent=pending?'Choose address timing':deadlineAtRisk?'Fix deadline issue':issues.length?'Fix date conflict':overloads.length?'Fix daily workload':'Review change';
     $('#banner-compare').disabled=!changes.length;
   }
 
@@ -318,6 +368,12 @@ function setTaskDay(id,day,restoreId){
   const draft=clonePlan(state.draft||state.plan);
   if(!state.draft&&(id==='housing'||id==='checkin')&&draft[field]===day) return;
   draft[field]=day;
+  if(id==='housing'){
+    state.addressTimingPending=day!==state.plan.housingDay;
+    if(!state.addressTimingPending){
+      for(const key of ['addressLag','internetLag','appointmentDay','internetDay','rebooked']) draft[key]=state.plan[key];
+    }
+  }
   if(id==='checkin') draft.rebooked=day!==state.plan.appointmentDay||state.plan.rebooked;
   validatePlan(draft);
   state.draft=plansEqual(draft,state.plan)?null:draft;
@@ -328,6 +384,23 @@ function setTaskDay(id,day,restoreId){
   if(restoreId) document.getElementById(restoreId)?.focus({preventScroll:true});
   const after=calculate(draft)[id],downstream=impacts(state.plan,draft).filter(change=>change.id!==id).length;
   announce(`${task.title}: ${formatDay(before.day)} to ${formatDay(after.day)}. ${downstream} other ${downstream===1?'step':'steps'} changed.`,false);
+}
+
+function applyAddressTiming(lag){
+  if(!state.draft||!state.addressTimingPending) return;
+  const option=addressTimingOptions(state.draft,state.plan).find(item=>item.lag===lag);
+  if(!option){
+    announce(`That timing cannot protect the ${formatDay(READY_BY_DAY)} deadline.`);
+    return;
+  }
+  state.draft=clonePlan(option.plan);
+  state.addressTimingPending=false;
+  state.selected='housing';
+  state.lastEdited='housing';
+  state.focused=true;
+  render();
+  $('#banner-compare')?.focus({preventScroll:true});
+  announce(option.plan.rebooked?`${option.label} previewed. Ready by ${formatDay(READY_BY_DAY)} if check-in on ${formatDay(option.schedule.checkin.day)} is confirmed.`:`${option.label} previewed. Ready by ${formatDay(READY_BY_DAY)} remains protected.`);
 }
 
 function resetToAutomatic(id){
@@ -344,6 +417,7 @@ function resetToAutomatic(id){
 function discardPreview(){
   state.draft=null;
   state.lastEdited=null;
+  state.addressTimingPending=false;
   render();
   announce('Preview discarded. Your saved plan is unchanged.');
 }
@@ -376,6 +450,7 @@ function undo(){
   state.plan=clonePlan(state.undo);
   state.undo=null;
   state.draft=null;
+  state.addressTimingPending=false;
   const focusTask=state.lastEdited||'housing';
   state.selected=focusTask;
   render();
@@ -383,9 +458,9 @@ function undo(){
   announce('Previous plan restored.');
 }
 
-function showDialog(html,wide=false){
+function showDialog(html){
   const root=$('#overlay-root');
-  root.innerHTML=`<dialog class="dialog ${wide?'dialog-wide':''}" aria-labelledby="dialog-title"><button class="dialog-close icon-button" aria-label="Close dialog">${icon('close')}</button>${html}</dialog>`;
+  root.innerHTML=`<dialog class="dialog" aria-labelledby="dialog-title"><button class="dialog-close icon-button" aria-label="Close dialog">${icon('close')}</button>${html}</dialog>`;
   const dialog=root.querySelector('dialog');
   dialog.showModal();
   dialog.querySelector('.dialog-close').onclick=()=>dialog.close();
@@ -401,6 +476,12 @@ function reviewValue(change,side,optionPlan){
     if(side==='before'&&change.before.status==='review') return 'Suggestion pending';
     if(side==='after') return optionPlan.bankDependency?'Follows address pack':'Independent';
   }
+  const lag=side==='before'?change.beforeLag:change.afterLag;
+  if(lag!==undefined&&change.beforeLag!==change.afterLag){
+    const timing=lag===0?'same day':`${lag} day${lag===1?'':'s'} after`;
+    return `${formatDay(result.day)} · ${timing}`;
+  }
+  if(change.id==='ready') return `${formatDay(READY_BY_DAY)} · ${result.status==='planned'?'protected':'at risk'}`;
   const mode=result.mode==='manual'?' · set by you':result.mode==='automatic'?' · automatic':'';
   return `${formatDay(result.day)}${mode}`;
 }
@@ -408,50 +489,41 @@ function reviewValue(change,side,optionPlan){
 function openComparison(){
   if(!state.draft) return;
   const schedule=calculate(state.draft);
-  const conflicts=TASKS.filter(task=>schedule[task.id].status==='conflict');
-  if(conflicts.length&&!(conflicts.length===1&&conflicts[0].id==='checkin')){
-    selectTask(conflicts[0].id);
-    announce('Resolve the highlighted date conflict before applying the plan.');
+  const issues=TASKS.filter(task=>schedule[task.id].status==='conflict');
+  if(issues.length){
+    selectTask(issues[0].id);
+    announce(schedule.ready.status==='blocked'?`Resolve the highlighted issue to protect ${formatDay(READY_BY_DAY)}.`:'Resolve the highlighted date conflict before applying this plan.');
     return;
   }
-  const conflicted=conflicts.length===1;
-  const options=conflicted?recoveries(state.draft):[{id:'keep',title:'Apply the preview',label:'Updated plan',description:'Keep the dates and dependency modes shown in the preview.',assumption:'Updates this demo plan only.',plan:clonePlan(state.draft)}];
-  state.choice=conflicted?null:'keep';
-  const recoveryMarkup=conflicted?`<p class="dialog-intro">Choose how to resolve the appointment without moving an earlier date silently.</p><div class="recovery-options">${options.map(option=>{const dates=calculate(option.plan);return `<label class="recovery-option"><input type="radio" name="recovery" value="${option.id}"><span class="option-topline"><span>${option.label}</span><span class="radio-mark"></span></span><strong>${option.title}</strong><p>${option.description}</p><div class="outcome-chip ${dates.ready.day>18?'late':''}">${bufferLabel(dates.ready.day)}</div><dl><div><dt>Housing confirmed</dt><dd>${formatDay(dates.housing.day)}</dd></div><div><dt>Office check-in</dt><dd>${formatDay(dates.checkin.day)}</dd></div><div><dt>Ready</dt><dd class="${dates.ready.day>18?'text-danger':'text-green'}">${formatDay(dates.ready.day)}</dd></div></dl><div class="option-assumption">${icon('info')}<span>${option.assumption}</span></div></label>`;}).join('')}</div>`:'';
-  const dialog=showDialog(`<div class="dialog-kicker">${conflicted?'CHOOSE A RESPONSE':'REVIEW CHANGES'}</div><h2 id="dialog-title">${conflicted?'Resolve the fixed appointment':'Apply this plan?'}</h2>${recoveryMarkup}<div id="change-review"></div><p class="decision-note">This updates the demo only. It does not change a booking or contact anyone.</p><div class="dialog-footer"><span id="apply-summary">${conflicted?'Select an option to continue.':''}</span><button class="button button-primary" id="apply-plan" ${conflicted?'disabled':''}>${conflicted?'Choose an option':'Apply plan'}</button></div>`,conflicted);
+  const overload=dailyWorkload(state.draft).find(item=>item.count>MAX_TASKS_PER_DAY);
+  if(overload){
+    const target=overload.taskIds.includes(state.lastEdited)?state.lastEdited:overload.taskIds.at(-1);
+    selectTask(target);
+    announce(`Move one task from ${formatDay(overload.day)} before applying this plan.`);
+    return;
+  }
+  const optionPlan=clonePlan(state.draft);
+  const changes=impacts(state.plan,optionPlan),dates=calculate(optionPlan);
+  const dialog=showDialog(`<div class="dialog-kicker">REVIEW CHANGES</div><h2 id="dialog-title">Apply this plan?</h2><div id="change-review"><div class="change-review-title"><strong>${changes.length} ${changes.length===1?'step':'steps'} will change</strong><span>BEFORE <span>→</span> AFTER</span></div>${changes.map(change=>`<div class="review-row"><span>${change.title}</span><span><del>${reviewValue(change,'before',optionPlan)}</del>${icon('arrow')}<strong>${reviewValue(change,'after',optionPlan)}</strong></span></div>`).join('')||'<p class="empty-small">No visible dates will change.</p>'}</div><p class="decision-note">This updates the demo only. A requested appointment remains unconfirmed until the external booking changes.</p><div class="dialog-footer"><span id="apply-summary">${readinessLabel(dates,optionPlan)}</span><button class="button button-primary" id="apply-plan">Apply this plan ${icon('arrow')}</button></div>`);
 
-  const update=()=>{
-    const option=options.find(item=>item.id===state.choice);
-    dialog.querySelectorAll('.recovery-option').forEach(element=>element.classList.toggle('chosen',element.querySelector('input').value===state.choice));
-    if(!option){
-      $('#change-review').innerHTML='<div class="comparison-prompt">Choose an option above to see its exact changes.</div>';
-      $('#apply-plan').disabled=true;
+  $('#apply-plan').onclick=()=>{
+    if(dates.ready.status!=='planned'||dates.ready.projectedDay>READY_BY_DAY||dailyWorkload(optionPlan).some(item=>item.count>MAX_TASKS_PER_DAY)){
+      announce(`This plan cannot protect ${formatDay(READY_BY_DAY)}.`);
       return;
     }
-    const changes=impacts(state.plan,option.plan),dates=calculate(option.plan);
-    $('#change-review').innerHTML=`<div class="change-review-title"><strong>${changes.length} ${changes.length===1?'step':'steps'} will change</strong><span>BEFORE <span>→</span> AFTER</span></div>${changes.map(change=>`<div class="review-row"><span>${change.title}</span><span><del>${reviewValue(change,'before',option.plan)}</del>${icon('arrow')}<strong>${reviewValue(change,'after',option.plan)}</strong></span></div>`).join('')||'<p class="empty-small">No visible dates will change.</p>'}`;
-    $('#apply-summary').textContent=bufferLabel(dates.ready.day);
-    $('#apply-plan').disabled=false;
-    $('#apply-plan').innerHTML=`Apply ${conflicted?(state.choice==='rebook'?'option A':'option B'):'this plan'} ${icon('arrow')}`;
-  };
-  dialog.querySelectorAll('[name="recovery"]').forEach(element=>element.onchange=()=>{state.choice=element.value;update();});
-  $('#apply-plan').onclick=()=>{
-    const option=options.find(item=>item.id===state.choice);
-    if(!option) return;
-    const ready=calculate(option.plan).ready.day;
     state.undo=clonePlan(state.plan);
-    state.plan=clonePlan(option.plan);
+    state.plan=clonePlan(optionPlan);
     state.draft=null;
+    state.addressTimingPending=false;
     dialog.close();
     render();
     $('#undo-button').focus({preventScroll:true});
-    announce(`Plan updated. ${bufferLabel(ready)}.`);
+    announce(optionPlan.rebooked?`Plan updated. Ready by ${formatDay(READY_BY_DAY)} if check-in on ${formatDay(dates.checkin.day)} is confirmed.`:`Plan updated. Ready by ${formatDay(READY_BY_DAY)} remains protected.`);
   };
-  update();
 }
 
 function showAbout(){
-  showDialog(`<div class="dialog-kicker">${icon('graph')} WHY THIS TOOL</div><h2 id="dialog-title">Seven cities taught me to stop treating a move like a checklist.</h2><p class="dialog-intro">A list shows what is due. A dependency map shows what will move, what will stay put, and where a person still needs to decide.</p><div class="about-facts"><p><strong>Personal starting point.</strong> This tool comes from Hayk’s experience living in seven cities over four years. The Tokyo-to-San Francisco dates and notes are an illustrative scenario, not official relocation requirements.</p><p><strong>Interaction rule.</strong> Edit any flexible step directly. Dates flow forward to dependent steps, never backward. A date set by you becomes a boundary; if an upstream delay makes it impossible, the planner preserves your intent and surfaces the conflict.</p><p><strong>Design judgment.</strong> Fixed commitments never move silently. AI-suggested links remain inactive until a person reviews and applies them, and every applied plan can be undone.</p><p><strong>How AI contributed.</strong> AI helped structure the sample scenario, surface edge cases, and critique the interaction. The dates shown here come from visible local rules; no live model or external booking is connected.</p></div><button class="button button-primary" id="about-done">Back to the plan ${icon('arrow')}</button>`);
+  showDialog(`<div class="dialog-kicker">${icon('graph')} WHY THIS TOOL</div><h2 id="dialog-title">Seven cities taught me to stop treating a move like a checklist.</h2><p class="dialog-intro">A list shows what is due. A dependency map shows what will move, what must stay fixed, and where a person still needs to decide.</p><div class="about-facts"><p><strong>Personal starting point.</strong> This tool comes from Hayk’s experience living in seven cities over four years. The Tokyo-to-San Francisco dates and notes are an illustrative scenario, not official relocation requirements.</p><p><strong>Constraint hierarchy.</strong> Readiness on 17 October is a hard deadline. Arrival on 18 October is fixed context. Task spacing is a preference that can be compressed only after the person reviews the added workload.</p><p><strong>Interaction rule.</strong> Changes flow forward, never backward. The planner can group at most two tasks on one day, but it never moves an appointment silently or offers a plan that misses readiness.</p><p><strong>How AI contributed.</strong> AI helped structure the sample scenario, generate recovery alternatives, surface edge cases, and critique the interaction. The dates shown here come from visible local rules; no live model or external booking is connected.</p></div><button class="button button-primary" id="about-done">Back to the plan ${icon('arrow')}</button>`);
   $('#about-done').onclick=()=>document.querySelector('dialog').close();
 }
 
@@ -463,9 +535,12 @@ $('#about-button').onclick=showAbout;
 $('#undo-button').onclick=undo;
 $('#discard-simulation').onclick=discardPreview;
 $('#banner-compare').onclick=()=>{
-  const schedule=calculate(current()),conflicts=TASKS.filter(task=>schedule[task.id].status==='conflict');
-  if(conflicts.length&&!(conflicts.length===1&&conflicts[0].id==='checkin')) selectTask(conflicts[0].id);
-  else openComparison();
+  if(state.addressTimingPending){
+    selectTask('housing');
+    document.querySelector('.timing-question')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    return;
+  }
+  openComparison();
 };
 compactView.addEventListener('change',event=>{state.view=event.matches?'list':'map';render();});
 window.addEventListener('resize',fitGraph);
@@ -474,10 +549,11 @@ render();
 const context=document.modelContext;
 if(context?.registerTool){
   const controller=new AbortController();
-  const snapshot=()=>({plan:clonePlan(state.plan),preview:state.draft?clonePlan(state.draft):null,selectedTask:state.selected,schedule:calculate(current())});
+  const snapshot=()=>({plan:clonePlan(state.plan),preview:state.draft?clonePlan(state.draft):null,addressTimingPending:state.addressTimingPending,selectedTask:state.selected,schedule:calculate(current())});
   const definitions=[
     {name:'read_move_plan',title:'Read move plan',description:'Read the saved plan, staged preview, date modes, and calculated schedule.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute:()=>snapshot()},
     {name:'stage_task_date',title:'Change a move step date',description:'Stage an October 2026 completion date for an editable move step. The change flows only to descendants.',inputSchema:{type:'object',properties:{taskId:{type:'string',enum:Object.keys(DATE_FIELDS)},day:{type:'integer',minimum:1,maximum:31}},required:['taskId','day'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||Object.keys(input).some(key=>!['taskId','day'].includes(key))||!DATE_FIELDS[input.taskId]||!Number.isInteger(input.day)) throw new Error('Provide an editable taskId and an integer October day.');setTaskDay(input.taskId,input.day);return snapshot();}},
+    {name:'stage_address_timing',title:'Choose address-pack timing',description:`After changing Housing, preview a same-day, one-day, or two-day address-pack plan that can meet ${formatDay(READY_BY_DAY)} and exposes any check-in request.`,inputSchema:{type:'object',properties:{lagDays:{type:'integer',enum:[0,1,2]}},required:['lagDays'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||Object.keys(input).some(key=>key!=='lagDays')||![0,1,2].includes(input.lagDays)) throw new Error('Choose lagDays 0, 1, or 2.');applyAddressTiming(input.lagDays);return snapshot();}},
     {name:'inspect_move_step',title:'Inspect a move step',description:'Select a step and show its date mode, dependencies, and evidence.',inputSchema:{type:'object',properties:{taskId:{type:'string',enum:TASKS.map(task=>task.id)}},required:['taskId'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||Object.keys(input).some(key=>key!=='taskId')) throw new Error('Provide a taskId.');selectTask(input.taskId);return snapshot();}},
     {name:'reset_task_to_dependencies',title:'Reset a task to automatic',description:'Remove a manual date from an eligible task so it follows its dependencies again.',inputSchema:{type:'object',properties:{taskId:{type:'string',enum:['address','internet','bank']}},required:['taskId'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||!canFollow(input.taskId)) throw new Error('Choose a task that can follow dependencies.');resetToAutomatic(input.taskId);return snapshot();}},
     {name:'discard_move_preview',title:'Discard move preview',description:'Discard staged date and dependency changes.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:()=>{discardPreview();return snapshot();}}
