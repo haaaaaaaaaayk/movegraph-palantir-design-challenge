@@ -14,13 +14,13 @@ Open http://127.0.0.1:4173. No install or build step is required.
 
 ## Main interaction
 
-1. Select **Simulate a change** to delay housing confirmation from October 3 to October 10.
+1. Select **Try a 7-day housing delay** to move housing confirmation from October 3 to October 10, or select **Choose a date** to begin with the current date and set your own.
 2. Follow the affected dependencies. The fixed October 8 appointment stays in place and becomes a conflict.
-3. Select **Compare ways forward**. Compare rebooking with obtaining earlier confirmation.
-4. Acknowledge the selected scenario’s assumptions and apply it. **Undo change** restores the prior plan.
+3. Select **Compare recovery plans**. Compare the required action and arrival buffer for each option.
+4. Choose and apply one option. **Undo change** restores the prior plan.
 5. Inspect the bank task and accept or dismiss its suggested dependency. Suggested links do not alter the schedule until accepted.
 
-The map, timeline, steps view, and detail panel share the same state. The date field, slider, buttons, and draggable housing date provide alternative inputs.
+The map, timeline, steps view, and detail panel share the same state. The timeline appears when a scenario is active, when before-and-after dates become useful. The date field, slider, buttons, and draggable housing date provide alternative inputs. Narrow screens begin in the Steps view.
 
 ## Scope and provenance
 

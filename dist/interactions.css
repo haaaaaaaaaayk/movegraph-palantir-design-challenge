@@ -45,3 +45,20 @@
 .graph-section:has(#steps-list:not([hidden])) .zoom-controls{visibility:hidden}
 .detail-description,.dialog-intro,.about-facts,.recovery-option>p,.recovery-option dt,.acknowledgement,.dialog-footer>span,.evidence-card small,.timeline-heading>span,.timeline-footnote,.impact-item small,.step-row small{color:#64766b}
 .node-meta,.option-topline,.dialog-kicker,.timeline-ruler>span,.timeline-footnote,.blocked-timeline{font-size:12px}
+.page-heading p{font-size:16px;line-height:1.55;max-width:680px;color:#607169}
+.view-switch button{font-size:14px;min-height:38px;padding:7px 13px}
+.simulation-banner .button{font-size:14px;min-height:40px}
+.simulation-banner strong{letter-spacing:.7px}
+.legend-fixed{width:13px;height:13px;border:1.5px solid #9aae9f;border-radius:3px;display:inline-block}
+.graph-legend{flex-wrap:wrap;row-gap:8px;font-size:12px}
+.control-hint{font-size:13px;line-height:1.5;color:#64766b;margin:8px 0 0}
+.date-step{min-width:36px;height:36px}
+.outcome-chip{display:inline-flex;background:#e4f4e9;color:#24684c;border:1px solid #cce6d5;border-radius:999px;padding:6px 10px;font-size:13px;font-weight:600;margin:1px 0 6px}
+.outcome-chip.late{background:#fff0e8;color:#a15035;border-color:#f2d7c8}
+.decision-note{font-size:13px;line-height:1.6;color:#65776d;background:#f4f7f5;border-radius:6px;padding:11px 13px;margin:0}
+.comparison-prompt{font-size:14px;color:#61736a;text-align:center;padding:17px;border:1px dashed #cfdbd3;border-radius:7px;background:#f8faf9}
+.recovery-option>p{font-size:14px}.recovery-option dl{font-size:14px}.option-assumption{font-size:13px}
+.dialog-close{width:36px;height:36px}
+.timeline-label{font-size:13px}
+@media(max-width:1250px){.page-heading p{font-size:15px}.heading-actions .button{font-size:14px}.view-title{font-size:14px}}
+@media(max-width:760px){.graph-legend>span:last-child{display:flex}.graph-legend{width:860px}.page-heading p{font-size:16px}.simulation-banner .button{font-size:13px}.surface-toolbar{height:auto;min-height:62px}.view-switch{margin-left:auto}}
