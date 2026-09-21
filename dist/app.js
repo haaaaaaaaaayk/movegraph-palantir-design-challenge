@@ -26,6 +26,7 @@ function icon(name,cls=''){
   return `<svg class="ui-icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.file}</svg>`;
 }
 
+const compactView=matchMedia('(max-width: 760px)');
 const state={
   plan:{...INITIAL_PLAN},
   draft:null,
@@ -34,7 +35,7 @@ const state={
   undo:null,
   choice:null,
   zoom:1,
-  view:matchMedia('(max-width: 760px)').matches?'list':'map',
+  view:compactView.matches?'list':'map',
   focused:false
 };
 
@@ -55,9 +56,13 @@ function bufferLabel(day){
   return `${Math.abs(delta)} day${Math.abs(delta)===1?'':'s'} after arrival`;
 }
 
-function announce(message){
+function announce(message,visible=true){
   clearTimeout(toastTimer);
   $('#toast').innerHTML=`${icon('check')}<span>${message}</span>`;
+  if(!visible){
+    $('#toast').classList.remove('visible');
+    return;
+  }
   $('#toast').classList.add('visible');
   toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),5000);
 }
@@ -67,12 +72,12 @@ function statusLabel(task,result,plan=current()){
   if(result.status==='conflict') return 'Date conflict';
   if(result.status==='blocked') return 'Blocked by conflict';
   if(result.status==='late') return 'After arrival';
-  if(result.status==='review') return 'AI link · inactive';
-  if(result.mode==='manual') return 'Date set by you';
-  if(result.mode==='automatic') return 'Follows dependencies';
+  if(result.status==='review') return 'Suggested · inactive';
+  if(result.mode==='manual') return 'Pinned date';
+  if(result.mode==='automatic') return 'Automatic';
   if(result.mode==='fixed') return plan.rebooked?'Rebooking needed':'Fixed appointment';
-  if(result.mode==='source') return task.id==='bank'?'Independent date':'Source date';
-  if(result.mode==='milestone') return 'Calculated milestone';
+  if(result.mode==='source') return task.id==='bank'?'Independent':'Start date';
+  if(result.mode==='milestone') return 'Calculated';
   return 'Planned';
 }
 
@@ -113,11 +118,15 @@ function renderGraph(){
       <span class="node-meta"><span>${statusMark(result.status)}</span>${statusLabel(task,result,plan)}</span>
       <strong>${task.title}</strong>
       <span class="node-footer"><span class="node-date">${result.day===null?'Awaiting resolution':formatDay(result.day)}</span>${delta?`<span class="change-badge">${delta>0?'+':''}${delta}d</span>`:`<span class="edit-date-cue ${editable?'is-editable':''}">${cue}</span>`}</span>
-      ${state.selected===task.id?'<span class="node-port"></span>':''}
     </button>`;
   }).join('');
 
   $('#graph-canvas').innerHTML=`<svg class="connections" viewBox="0 0 860 562" aria-hidden="true"><defs><marker id="arrow-base" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 7 4 0 8" fill="#b2c8bb" stroke="none"/></marker><marker id="arrow-active" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 7 4 0 8" fill="#b97533" stroke="none"/></marker><marker id="arrow-dashed" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 7 4 0 8" fill="#a28cb8" stroke="none"/></marker></defs>${paths}</svg><div class="graph-stage-label" style="left:24px">01 <span>PREPARE</span></div><div class="graph-stage-label" style="left:300px">02 <span>PUT IT TOGETHER</span></div><div class="graph-stage-label" style="left:576px">03 <span>GET READY</span></div>${nodes}`;
+  const legend=[];
+  if(TASKS.some(task=>dates[task.id].mode==='manual')) legend.push('<span><i class="legend-pin"></i> Pinned</span>');
+  if(TASKS.some(task=>dates[task.id].mode==='fixed')) legend.push('<span><i class="legend-fixed"></i> Fixed</span>');
+  if(state.selected==='bank'&&!plan.bankReviewed) legend.push('<span><i class="legend-line dotted"></i> Suggested · inactive</span>');
+  $('.graph-legend').innerHTML=legend.join('');
   document.querySelectorAll('[data-task]').forEach(element=>element.onclick=()=>selectTask(element.dataset.task));
 
   $('#steps-list').innerHTML=TASKS.map(task=>{
@@ -151,10 +160,10 @@ function plannedInputDay(task,result,plan){
 }
 
 function modeCard(task,result,plan){
-  if(result.mode==='automatic') return `<div class="mode-card automatic">${icon('link')}<div><strong>Follows dependencies</strong><p>Scheduled at the earliest valid date from the steps before it.</p></div></div>`;
-  if(result.mode==='manual') return `<div class="mode-card manual">${icon('pin')}<div><strong>Date set by you</strong><p>This date stays put while earlier dates change.</p>${canFollow(task.id,plan)?'<button class="mode-action" id="reset-automatic">Follow dependencies again</button>':''}</div></div>`;
-  if(result.mode==='fixed') return `<div class="mode-card fixed">${icon('calendar')}<div><strong>Fixed appointment</strong><p>It never moves automatically. Changing it means requesting a new slot.</p></div></div>`;
-  if(result.mode==='source') return `<div class="mode-card source">${icon('edit')}<div><strong>${task.id==='bank'?'Independent date':'Source date'}</strong><p>Earlier steps do not control this date.</p></div></div>`;
+  if(result.mode==='automatic') return `<div class="mode-line"><strong>Automatic</strong><span>Earliest valid date from its prerequisites.</span></div>`;
+  if(result.mode==='manual') return `<div class="mode-line"><strong>Pinned</strong><span>Stays fixed when earlier dates change.</span>${canFollow(task.id,plan)?'<button class="mode-action" id="reset-automatic">Follow dependencies</button>':''}</div>`;
+  if(result.mode==='fixed') return `<div class="mode-line"><strong>Fixed appointment</strong><span>Moves only when you request a new date.</span></div>`;
+  if(result.mode==='source') return `<div class="mode-line"><strong>${task.id==='bank'?'Independent':'Start date'}</strong><span>Not controlled by an earlier step.</span></div>`;
   return '';
 }
 
@@ -168,47 +177,31 @@ function renderInspector(){
   const task=taskById(state.selected),plan=current(),schedule=calculate(plan),result=schedule[task.id];
   const edges=edgesFor(plan),incoming=edges.filter(edge=>edge.to===task.id),outgoing=edges.filter(edge=>edge.from===task.id);
   const changes=state.draft?impacts(state.plan,plan):[];
-  const conflicts=TASKS.filter(item=>schedule[item.id].status==='conflict');
   const inputDay=plannedInputDay(task,result,plan);
   const editable=editableTask(task.id)&&inputDay!==null;
   const maxDay=task.id==='housing'?20:31;
   const laterEffects=changes.filter(change=>change.id!==task.id);
   const dateLabel=result.mode==='fixed'?'Appointment date':result.mode==='milestone'?'Calculated readiness':'Planned completion';
 
-  const dateEditor=editable?`<div class="date-control"><label for="task-date">${dateLabel}</label><input id="task-date" type="date" min="2026-10-01" max="2026-10-${String(maxDay).padStart(2,'0')}" value="2026-10-${String(inputDay).padStart(2,'0')}" ${result.status==='blocked'&&result.day===null?'disabled':''}><p class="control-hint">Changing this affects this step and the steps after it. Earlier steps stay put.</p></div>${modeCard(task,result,plan)}`:'';
+  const dateEditor=editable?`<div class="date-control"><label for="task-date">${dateLabel}</label><input id="task-date" type="date" min="2026-10-01" max="2026-10-${String(maxDay).padStart(2,'0')}" value="2026-10-${String(inputDay).padStart(2,'0')}" ${result.status==='blocked'&&result.day===null?'disabled':''}><p class="control-hint">Updates this step and its dependents.</p></div>${modeCard(task,result,plan)}`:`<div class="read-only-date"><span>${dateLabel}</span><strong class="${result.status==='conflict'?'text-danger':''}">${formatDay(result.day)}</strong></div>`;
   const impactList=state.draft?`<div class="detail-section impact-list"><h3>${laterEffects.length} OTHER ${laterEffects.length===1?'CHANGE':'CHANGES'} IN THIS PREVIEW</h3>${laterEffects.map(change=>`<button class="impact-item" data-impact="${change.id}"><span>${change.after.status==='conflict'?'!':change.after.status==='blocked'?'⊘':'↳'}</span><span><strong>${change.title}</strong><small>${change.after.status==='conflict'?`Conflict · earliest ${formatDay(change.after.earliest)}`:change.after.status==='blocked'?'Blocked until the earlier conflict is resolved':`${formatDay(change.before.day)} → ${formatDay(change.after.day)}`}</small></span></button>`).join('')||'<p class="empty-small">This change does not move another date.</p>'}</div>`:'';
   const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Suggested · inactive until accepted</small>':`<small>${edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:'Ready to use'}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
   const unlocks=outgoing.length?`<div class="detail-section"><h3>THIS CAN MOVE</h3>${outgoing.map(edge=>`<button class="unlock-item" data-impact="${edge.to}"><span>↳</span>${taskById(edge.to).title}${edge.suggested?'<span class="suggestion-tag">?</span>':''}</button>`).join('')}</div>`:!incoming.length?'<div class="detail-section"><h3>INDEPENDENT STEP</h3><p class="empty-small">Changes elsewhere do not move this task.</p></div>':'';
-  const evidence=task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>${icon('spark')} Suggested link · currently inactive</span><p>This task is independent, so ${formatDay(result.day)} is valid. AI suggests using your exact address to compare nearby branches; preview the link to see its consequence.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<div class="evidence-card"><span>${icon('file')} ${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div>`;
-  const bottom=state.draft
-    ?conflicts.length
-      ?result.status==='conflict'
-        ?'<p>Choose a resolution above. The preview cannot be applied while this date conflicts.</p>'
-        :`<button class="button button-primary full-width" id="inspector-review">${conflicts.length===1&&conflicts[0].id==='checkin'?'Compare recovery plans':'Go to the date conflict'} ${icon('arrow')}</button><p>The preview cannot be applied until every conflict is resolved.</p>`
-      :`<button class="button button-primary full-width" id="inspector-review">Review and apply ${icon('arrow')}</button><p>This is a preview. Your saved plan has not changed.</p>`
-    :task.kind==='complete'?'<p>This step is complete in the sample plan.</p>':task.kind==='milestone'?'<p>This milestone is calculated from the steps before it.</p>':'<p>Edit the date above to preview its downstream effects.</p>';
+  const evidence=state.draft&&task.id!=='bank'?'':task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>Suggested link · inactive</span><p>This task is independent, so ${formatDay(result.day)} is valid. Your address could improve a nearby-branch comparison.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<details class="evidence-disclosure"><summary>Why this relationship?</summary><div class="evidence-card"><span>${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div></details>`;
+  const relationships=state.draft?'':`${dependencies}${unlocks}`;
+  const bottom=task.kind==='complete'?'<p>Completed in this sample plan.</p>':task.kind==='milestone'?'<p>Calculated from the steps before it.</p>':'';
 
   $('#inspector').innerHTML=`
-    <div class="inspector-eyebrow">${state.draft?'PREVIEW DETAILS':'STEP DETAILS'}<span>${String(TASKS.indexOf(task)+1).padStart(2,'0')} / 08</span></div>
-    <div class="detail-icon">${icon(task.icon)}</div>
     <h2>${task.title}</h2>
     <p class="detail-description">${task.description}</p>
-    <div class="detail-date"><span>${dateLabel}</span><strong class="${result.status==='conflict'?'text-danger':''}">${formatDay(result.day)}</strong></div>
     ${dateEditor}
     ${conflictMarkup(task,result,plan)}
     ${impactList}
-    ${dependencies}
-    ${unlocks}
+    ${relationships}
     ${evidence}
-    <div class="inspector-bottom">${bottom}</div>`;
+    ${bottom?`<div class="inspector-bottom">${bottom}</div>`:''}`;
 
   document.querySelectorAll('[data-impact]').forEach(element=>element.onclick=()=>selectTask(element.dataset.impact));
-  $('#inspector-review')?.addEventListener('click',()=>{
-    if(conflicts.length){
-      if(conflicts.length===1&&conflicts[0].id==='checkin') openComparison();
-      else selectTask(conflicts[0].id);
-    }else openComparison();
-  });
   $('#reset-automatic')?.addEventListener('click',()=>resetToAutomatic(task.id));
   $('#conflict-reset')?.addEventListener('click',()=>resetToAutomatic(task.id));
   $('#use-earliest')?.addEventListener('click',()=>setTaskDay(task.id,result.earliest));
@@ -236,7 +229,7 @@ function renderTimeline(){
     const point=result.day!==null?`<button class="time-point ${result.status} mode-${result.mode} ${diff?'shifted':''} ${draggable?'draggable-date':''}" data-point="${task.id}" style="left:${position(result.day)}%" aria-label="${task.title}, ${formatDay(result.day)}, ${modeName(result.mode)}${draggable?', drag to change or select for the date field':''}" title="${formatDay(result.day)} · ${modeName(result.mode)}"><span>${String(result.day).padStart(2,'0')}</span>${result.mode==='manual'?icon('pin'):''}</button>`:'<span class="blocked-timeline">Waiting for an earlier conflict</span>';
     return `<div class="timeline-row"><button class="timeline-label ${state.selected===task.id?'active':''}" data-timeline="${task.id}">${icon(task.icon)}<span>${task.title}<small>${statusLabel(task,result,plan)}</small></span></button><div class="time-grid">${diff&&before.day!==null?`<span class="ghost-date" style="left:${position(before.day)}%" aria-hidden="true"></span>`:''}${point}<span class="arrival-line" style="left:${position(18)}%" aria-hidden="true"></span></div></div>`;
   }).join('');
-  $('.timeline-section').innerHTML=`<div class="timeline-heading"><div><strong>Scenario timeline</strong><span>Dates flow forward. Earlier steps stay put; dependent steps recalculate.</span></div>${state.draft?'<span><i class="ghost-key"></i> Saved plan &nbsp; <i class="new-key"></i> Preview</span>':''}</div><div class="timeline-ruler"><span>OCTOBER 2026</span><div>${[1,6,12,18,24,31].map(day=>`<span style="left:${position(day)}%">${String(day).padStart(2,'0')}</span>`).join('')}</div></div>${rows}<div class="timeline-footnote"><span>Drag a flexible date, or select any step for a precise date.</span><span>Arrival deadline: 18 Oct</span></div>`;
+  $('.timeline-section').innerHTML=`<div class="timeline-heading"><strong>Timeline preview</strong><span><i class="ghost-key"></i> Saved &nbsp; <i class="new-key"></i> Preview</span></div><div class="timeline-ruler"><span>OCTOBER 2026</span><div>${[1,6,12,18,24,31].map(day=>`<span style="left:${position(day)}%">${String(day).padStart(2,'0')}</span>`).join('')}</div></div>${rows}<div class="timeline-footnote"><span>Drag a flexible date to adjust it.</span><span>Arrival: 18 Oct</span></div>`;
   document.querySelectorAll('[data-timeline]').forEach(element=>element.onclick=()=>selectTask(element.dataset.timeline));
   document.querySelectorAll('[data-point]').forEach(element=>{
     const task=taskById(element.dataset.point);
@@ -294,9 +287,8 @@ function render(){
   const late=schedule.ready.status==='late',readyDay=schedule.ready.day;
 
   $('#plan-health').textContent=conflicts.length?`${conflicts.length} date conflict${conflicts.length===1?'':'s'}`:late?'Plan finishes after arrival':state.draft?(changes.length?'Preview ready':'No change yet'):state.undo?'Plan updated':'On track';
-  $('#plan-summary').textContent=conflicts.length?`${conflicts.map(task=>task.title).join(', ')} · earlier steps stayed put`:late?`Ready ${formatDay(readyDay)} · ${bufferLabel(readyDay)}`:`Ready ${formatDay(readyDay)} · ${bufferLabel(readyDay)}${plan.bankReviewed?'':' · 1 link to review'}`;
+  $('#plan-summary').textContent=conflicts.length?`${conflicts.map(task=>task.title).join(', ')} · earlier steps stayed put`:late?`Ready ${formatDay(readyDay)} · ${bufferLabel(readyDay)}`:`Ready ${formatDay(readyDay)} · ${bufferLabel(readyDay)}`;
   $('.plan-overview').classList.toggle('warning',Boolean(conflicts.length)||late);
-  $('.overview-check').textContent=conflicts.length||late?'!':'✓';
   $('#undo-button').hidden=!state.undo;
   $('#simulation-banner').hidden=!state.draft;
   if(state.draft){
@@ -305,16 +297,14 @@ function render(){
     $('#banner-compare').disabled=!changes.length;
   }
 
+  $('.view-title').textContent=state.view==='map'?'Dependency map':'Plan steps';
+  $('.graph-direction-hint').hidden=state.view!=='map';
   renderGraph();
   renderInspector();
   renderTimeline();
-  $('.timeline-section').hidden=false;
+  $('.timeline-section').hidden=!state.draft;
   $('#steps-list').hidden=state.view!=='list';
   $('#graph-viewport').hidden=state.view!=='map';
-  document.querySelectorAll('[data-view]').forEach(element=>{
-    element.classList.toggle('active',element.dataset.view===state.view);
-    element.setAttribute('aria-pressed',String(element.dataset.view===state.view));
-  });
   if(state.view==='map') fitGraph();
   const restore=focusId?document.getElementById(focusId):focusKey?document.querySelector(`[${focusKey}="${focusValue}"]`):null;
   if(restore&&!restore.hidden) restore.focus({preventScroll:true});
@@ -337,7 +327,7 @@ function setTaskDay(id,day,restoreId){
   render();
   if(restoreId) document.getElementById(restoreId)?.focus({preventScroll:true});
   const after=calculate(draft)[id],downstream=impacts(state.plan,draft).filter(change=>change.id!==id).length;
-  announce(`${task.title}: ${formatDay(before.day)} to ${formatDay(after.day)}. ${downstream} other ${downstream===1?'step':'steps'} changed.`);
+  announce(`${task.title}: ${formatDay(before.day)} to ${formatDay(after.day)}. ${downstream} other ${downstream===1?'step':'steps'} changed.`,false);
 }
 
 function resetToAutomatic(id){
@@ -348,7 +338,7 @@ function resetToAutomatic(id){
   state.selected=id;
   state.lastEdited=id;
   render();
-  announce(`${taskById(id).title} follows its dependencies again.`);
+  announce(`${taskById(id).title} follows its dependencies again.`,false);
 }
 
 function discardPreview(){
@@ -427,7 +417,8 @@ function openComparison(){
   const conflicted=conflicts.length===1;
   const options=conflicted?recoveries(state.draft):[{id:'keep',title:'Apply the preview',label:'Updated plan',description:'Keep the dates and dependency modes shown in the preview.',assumption:'Updates this demo plan only.',plan:clonePlan(state.draft)}];
   state.choice=conflicted?null:'keep';
-  const dialog=showDialog(`<div class="dialog-kicker">${icon('graph')} ${conflicted?'CHOOSE A RESPONSE':'REVIEW THE CHANGE'}</div><h2 id="dialog-title">${conflicted?'Resolve the fixed appointment':'Apply this plan?'}</h2><p class="dialog-intro">${conflicted?'Both options preserve the directional rule: no earlier date moves without your decision.':'Review every date and mode change before updating the saved plan.'}</p><div class="recovery-options">${options.map(option=>{const dates=calculate(option.plan),selected=state.choice===option.id;return `<label class="recovery-option ${selected?'chosen':''}"><input type="radio" name="recovery" value="${option.id}" ${selected?'checked':''}><span class="option-topline"><span>${option.label}</span><span class="radio-mark"></span></span><strong>${option.title}</strong><p>${option.description}</p><div class="outcome-chip ${dates.ready.day>18?'late':''}">${bufferLabel(dates.ready.day)}</div><dl><div><dt>Housing confirmed</dt><dd>${formatDay(dates.housing.day)}</dd></div><div><dt>Office check-in</dt><dd>${formatDay(dates.checkin.day)}</dd></div><div><dt>Ready</dt><dd class="${dates.ready.day>18?'text-danger':'text-green'}">${formatDay(dates.ready.day)}</dd></div></dl><div class="option-assumption">${icon('info')}<span>${option.assumption}</span></div></label>`;}).join('')}</div><div id="change-review"></div><p class="decision-note">This updates the demo plan only. It does not change a booking or contact anyone.</p><div class="dialog-footer"><span id="apply-summary">${conflicted?'Select an option to continue.':''}</span><button class="button button-primary" id="apply-plan" ${conflicted?'disabled':''}>${conflicted?'Choose an option':'Apply this plan'}</button></div>`,true);
+  const recoveryMarkup=conflicted?`<p class="dialog-intro">Choose how to resolve the appointment without moving an earlier date silently.</p><div class="recovery-options">${options.map(option=>{const dates=calculate(option.plan);return `<label class="recovery-option"><input type="radio" name="recovery" value="${option.id}"><span class="option-topline"><span>${option.label}</span><span class="radio-mark"></span></span><strong>${option.title}</strong><p>${option.description}</p><div class="outcome-chip ${dates.ready.day>18?'late':''}">${bufferLabel(dates.ready.day)}</div><dl><div><dt>Housing confirmed</dt><dd>${formatDay(dates.housing.day)}</dd></div><div><dt>Office check-in</dt><dd>${formatDay(dates.checkin.day)}</dd></div><div><dt>Ready</dt><dd class="${dates.ready.day>18?'text-danger':'text-green'}">${formatDay(dates.ready.day)}</dd></div></dl><div class="option-assumption">${icon('info')}<span>${option.assumption}</span></div></label>`;}).join('')}</div>`:'';
+  const dialog=showDialog(`<div class="dialog-kicker">${conflicted?'CHOOSE A RESPONSE':'REVIEW CHANGES'}</div><h2 id="dialog-title">${conflicted?'Resolve the fixed appointment':'Apply this plan?'}</h2>${recoveryMarkup}<div id="change-review"></div><p class="decision-note">This updates the demo only. It does not change a booking or contact anyone.</p><div class="dialog-footer"><span id="apply-summary">${conflicted?'Select an option to continue.':''}</span><button class="button button-primary" id="apply-plan" ${conflicted?'disabled':''}>${conflicted?'Choose an option':'Apply plan'}</button></div>`,conflicted);
 
   const update=()=>{
     const option=options.find(item=>item.id===state.choice);
@@ -464,13 +455,11 @@ function showAbout(){
   $('#about-done').onclick=()=>document.querySelector('dialog').close();
 }
 
-$('.surface-toolbar').innerHTML=`<div class="view-title">${icon('graph')} Dependency map</div><div class="graph-direction-hint">Arrows point from prerequisite → dependent step</div><div class="view-switch" aria-label="Plan presentation"><button data-view="map" class="active" aria-pressed="true">Map</button><button data-view="list" aria-pressed="false">Steps</button></div>`;
+$('.surface-toolbar').innerHTML=`<div class="view-title">Dependency map</div><div class="graph-direction-hint">Arrows show active dependencies.</div>`;
 $('#graph-viewport').insertAdjacentHTML('afterend','<div id="steps-list" class="steps-list" hidden></div>');
-$('.graph-legend').innerHTML='<span><i class="legend-line"></i> Active dependency</span><span><i class="legend-pin"></i> Date set by you</span><span><i class="legend-fixed"></i> Fixed appointment</span><span><i class="legend-line dotted"></i> Suggested link · inactive</span>';
 $('.workspace').insertAdjacentHTML('beforebegin',`<div id="simulation-banner" class="simulation-banner" hidden><div>${icon('edit')}<strong>UNSAVED CHANGE</strong><span id="simulation-caption"></span></div><div><button class="button button-quiet" id="discard-simulation">Reset preview</button><button class="button button-primary" id="banner-compare">Review change</button></div></div>`);
 
 $('#about-button').onclick=showAbout;
-$('#footer-about').onclick=showAbout;
 $('#undo-button').onclick=undo;
 $('#discard-simulation').onclick=discardPreview;
 $('#banner-compare').onclick=()=>{
@@ -478,7 +467,7 @@ $('#banner-compare').onclick=()=>{
   if(conflicts.length&&!(conflicts.length===1&&conflicts[0].id==='checkin')) selectTask(conflicts[0].id);
   else openComparison();
 };
-document.querySelectorAll('[data-view]').forEach(element=>element.onclick=()=>{state.view=element.dataset.view;render();});
+compactView.addEventListener('change',event=>{state.view=event.matches?'list':'map';render();});
 window.addEventListener('resize',fitGraph);
 render();
 

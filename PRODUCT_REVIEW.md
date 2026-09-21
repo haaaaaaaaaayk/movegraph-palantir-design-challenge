@@ -25,7 +25,7 @@ Propagation is directional. A change affects the edited task and its descendants
 ## End-to-end walkthrough completed
 
 1. **Understand the baseline.** The plan opens on track. Housing is confirmed on 3 October, the check-in is fixed on 8 October, the plan is ready on 10 October, and one AI-suggested dependency requires review.
-2. **Select the object first.** Any editable node, Step row, or flexible timeline marker opens the same date control. There is no separate simulation launcher.
+2. **Select the object first.** Any editable node, or Step row on a narrow screen, opens the same date control. There is no separate simulation launcher.
 3. **Edit a later task.** Moving Internet from 7 to 14 October creates a manual pin. Housing stays on 3 October, the Address Pack stays on 5 October, and Readiness moves to 17 October.
 4. **Return to the system rule.** “Follow dependencies again” removes that pin and returns Internet to its earliest valid date, 7 October.
 5. **Expose an impossible intent.** Pinning Internet to 6 October preserves the requested date, explains that 7 October is the earliest valid date, and blocks Readiness. The user can use the earliest date or return the task to automatic scheduling.
@@ -38,13 +38,14 @@ Propagation is directional. A change affects the edited task and its descendants
 
 | Feedback | Product response |
 | --- | --- |
+| The interface repeated its story and state | Replaced the sidebar and utility bar with one compact header, removed duplicated inspector values and actions, and kept the personal story in one sentence plus About. |
 | A hypothetical seven-day action is counterintuitive | Removed the scenario launcher. Selecting a step and editing its date now creates the preview directly. |
 | Later events should be editable | Housing, Address Pack, Check-in, Internet, and Bank all expose date controls; flexible dates can also be dragged on the timeline. |
 | A later edit should not rewrite the past | Propagation runs only downstream. Upstream and independent dates stay unchanged. |
 | Upstream edits must still affect later work | Automatic descendants recalculate from their dependencies and buffers. |
 | User-set dates need predictable behavior | Editing an automatic date creates a visible manual pin with a “Follow dependencies again” action. |
 | Conflicts should remain honest | Impossible pins stay visible with their earliest valid date; descendants block until the conflict is repaired. |
-| The timeline should teach the model | It is always visible and states: “Dates flow forward. Earlier steps stay put; dependent steps recalculate.” Saved dates remain as dashed ghosts during a preview. |
+| The timeline should teach the model | It appears after an edit, when comparison is useful. Saved dates remain as dashed ghosts beside the preview. |
 | Direct manipulation needed a precise alternative | Flexible dates support timeline drag; every editable task has one native date field for keyboard and exact input. Redundant sliders and plus/minus controls were removed. |
 | Fixed dates should not shift silently | The check-in is not draggable and is labeled as a fixed appointment. Rescheduling is explicit in the inspector. |
 | AI structure should remain advisory | Inactive suggestions are omitted from the default dependency map. Selecting Banking reveals the proposed link, explains why the address may matter, and lets the user preview its consequence before applying it. |
