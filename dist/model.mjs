@@ -1,6 +1,7 @@
 export const ARRIVAL_DAY=18;
 export const READY_BY_DAY=17;
 export const MAX_TASKS_PER_DAY=2;
+export const ADDRESS_TIMING_FIELDS=Object.freeze(['addressDay','addressLag','appointmentDay','internetLag','rebooked']);
 
 export const INITIAL_PLAN = Object.freeze({
   housingDay:10,
@@ -30,7 +31,7 @@ export const TASKS = [
   {id:'address',title:'Prepare address pack',category:'Documents',kind:'flexible',x:300,y:246,icon:'folder',description:'Gather your housing confirmation and prepared ID documents into one pack. Choose whether to complete it the same day or allow up to two calendar days.',note:'Once housing is confirmed, decide how much time I need to assemble my pack.',source:'Your planning notes',sourceType:'Accepted scenario note'},
   {id:'checkin',title:'Housing office check-in',category:'Appointment',kind:'fixed',x:576,y:86,icon:'calendar',description:'A sample online appointment with your housing coordinator. In this scenario, your address pack must be ready the previous day.',note:'Online check-in on 13 October. Please have the pack ready the day before.',source:'Housing coordinator’s note',sourceType:'Fictional appointment'},
   {id:'internet',title:'Arrange home internet',category:'Getting settled',kind:'flexible',x:576,y:246,icon:'wifi',description:'Compare internet arrangements using the address in your pack. The plan can place this work alongside another task when the readiness deadline requires it.',note:'I want to compare internet arrangements after my address pack is ready.',source:'Your planning notes',sourceType:'Accepted scenario note'},
-  {id:'bank',title:'Compare local banking options',category:'Getting settled',kind:'flexible',x:300,y:406,icon:'bank',description:'Research fees, services, and broad availability before deciding where to open an account. Your exact address might improve a nearby-branch comparison.',note:'I can compare providers before my address is final. The address may matter later if nearby branches influence my choice.',source:'AI-suggested dependency',sourceType:'Unverified planning suggestion'},
+  {id:'bank',title:'Compare local banking options',category:'Getting settled',kind:'flexible',x:300,y:406,icon:'bank',description:'Research fees, services, and broad availability before deciding where to open an account. Your confirmed address may affect which option is practical.',note:'AI first treated banking as independent. I challenged that assumption because branch proximity and the practical timing of account setup may depend on my confirmed address.',source:'Hayk’s critique of the AI plan',sourceType:'Reviewable design hypothesis'},
   {id:'ready',title:'Ready by 17 Oct',category:'Milestone',kind:'milestone',x:576,y:406,icon:'flag',description:'A fixed readiness deadline one day before arrival. The plan can change, but this date does not move.',note:'Finish by 17 October: leave three days after arranging internet and at least a day after check-in for final preparation.',source:'Your planning notes',sourceType:'Accepted scenario note'}
 ];
 
@@ -226,6 +227,15 @@ export function addressTimingOptions(plan,savedPlan=INITIAL_PLAN){
   }).filter(option=>option.feasible);
   const preferred=candidates.find(option=>option.lag===0)||candidates[0];
   return candidates.map(option=>({...option,recommended:option.id===preferred?.id}));
+}
+
+export function restoreAddressTimingChoice(plan,timingBase){
+  validatePlan(plan);
+  validatePlan(timingBase);
+  return ADDRESS_TIMING_FIELDS.reduce((restored,key)=>{
+    restored[key]=timingBase[key];
+    return restored;
+  },{...plan});
 }
 
 export function recoveries(draft,savedPlan=INITIAL_PLAN){

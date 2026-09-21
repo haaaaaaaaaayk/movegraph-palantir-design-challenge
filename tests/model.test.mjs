@@ -9,6 +9,7 @@ import {
   edgesFor,
   connectedIds,
   addressTimingOptions,
+  restoreAddressTimingChoice,
   dailyWorkload,
   recoveries,
   impacts,
@@ -70,6 +71,34 @@ test('address timing metadata compares rebooking against the supplied saved plan
   assert.equal(options[1].requiresRebooking,false);
   assert.equal(options[2].plan.appointmentDay,15);
   assert.deepEqual(options[2].rebooking,{fromDay:14,toDay:15});
+});
+
+test('reopening address timing restores choice-owned fields and preserves unrelated edits',()=>{
+  const timingBase={...INITIAL_PLAN,housingDay:12};
+  const selected=addressTimingOptions(timingBase)[1].plan;
+  const current={...selected,internetDay:14,bankDay:15,bankDependency:true,bankReviewed:true};
+  const restored=restoreAddressTimingChoice(current,timingBase);
+
+  assert.equal(restored.housingDay,12);
+  assert.equal(restored.addressDay,timingBase.addressDay);
+  assert.equal(restored.addressLag,timingBase.addressLag);
+  assert.equal(restored.appointmentDay,timingBase.appointmentDay);
+  assert.equal(restored.internetLag,timingBase.internetLag);
+  assert.equal(restored.rebooked,timingBase.rebooked);
+  assert.equal(restored.internetDay,14);
+  assert.equal(restored.bankDay,15);
+  assert.equal(restored.bankDependency,true);
+  assert.equal(restored.bankReviewed,true);
+  assert.notEqual(restored,current);
+  assert.equal(current.addressLag,1);
+  assert.equal(current.appointmentDay,14);
+
+  const nextChoice=addressTimingOptions(restored)[0].plan;
+  assert.equal(nextChoice.housingDay,12);
+  assert.equal(nextChoice.internetDay,14);
+  assert.equal(nextChoice.bankDay,15);
+  assert.equal(nextChoice.bankDependency,true);
+  assert.equal(nextChoice.bankReviewed,true);
 });
 
 test('timing alternatives that cannot meet the deadline or capacity are omitted',()=>{

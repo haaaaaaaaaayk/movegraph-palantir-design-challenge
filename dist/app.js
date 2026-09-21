@@ -1,4 +1,4 @@
-import {INITIAL_PLAN,TASKS,DATE_FIELDS,ARRIVAL_DAY,READY_BY_DAY,MAX_TASKS_PER_DAY,calculate,edgesFor,impacts,connectedIds,addressTimingOptions,dailyWorkload,formatDay,validatePlan} from './model.mjs';
+import {INITIAL_PLAN,TASKS,DATE_FIELDS,ARRIVAL_DAY,READY_BY_DAY,MAX_TASKS_PER_DAY,calculate,edgesFor,impacts,connectedIds,addressTimingOptions,restoreAddressTimingChoice,dailyWorkload,formatDay,validatePlan} from './model.mjs';
 
 const $=selector=>document.querySelector(selector);
 const icons={
@@ -34,6 +34,8 @@ const state={
   lastEdited:null,
   undo:null,
   addressTimingPending:false,
+  addressTimingBase:null,
+  selectedAddressLag:null,
   zoom:1,
   view:compactView.matches?'list':'map',
   focused:false
@@ -71,7 +73,7 @@ function statusLabel(task,result,plan=current()){
   if(result.status==='conflict'&&result.constraint==='deadline') return `Misses ${formatDay(READY_BY_DAY)} deadline`;
   if(result.status==='conflict') return 'Date conflict';
   if(result.status==='blocked') return task.id==='ready'?`${formatDay(READY_BY_DAY)} deadline at risk`:'Blocked by conflict';
-  if(result.status==='review') return 'Suggested · inactive';
+  if(result.status==='review') return 'Design hypothesis · inactive';
   if(result.mode==='manual') return 'Pinned date';
   if(result.mode==='automatic') return 'Automatic';
   if(result.mode==='fixed') return plan.rebooked?'Rebooking needed':'Fixed appointment';
@@ -124,7 +126,7 @@ function renderGraph(){
   const legend=[];
   if(TASKS.some(task=>dates[task.id].mode==='manual')) legend.push('<span><i class="legend-pin"></i> Pinned</span>');
   if(TASKS.some(task=>dates[task.id].mode==='fixed')) legend.push('<span><i class="legend-fixed"></i> Fixed</span>');
-  if(state.selected==='bank'&&!plan.bankReviewed) legend.push('<span><i class="legend-line dotted"></i> Suggested · inactive</span>');
+  if(state.selected==='bank'&&!plan.bankReviewed) legend.push('<span><i class="legend-line dotted"></i> Design hypothesis · inactive</span>');
   $('.graph-legend').innerHTML=legend.join('');
   document.querySelectorAll('[data-task]').forEach(element=>element.onclick=()=>selectTask(element.dataset.task));
 
@@ -169,7 +171,7 @@ function modeCard(task,result,plan){
 function addressTimingQuestion(plan){
   const options=addressTimingOptions(plan,state.plan);
   if(!options.length) return `<div class="timing-question"><span>NO FEASIBLE SCHEDULE</span><h3>These dates cannot protect ${formatDay(READY_BY_DAY)}</h3><p>Choose an earlier housing date or revise a pinned task before continuing.</p></div>`;
-  return `<div class="timing-question" role="group" aria-labelledby="timing-title"><span>DECISION NEEDED</span><h3 id="timing-title">How much time do you need for the address pack?</h3><p>${formatDay(READY_BY_DAY)} is fixed. Each choice shows the work required to protect it.</p><div class="timing-options">${options.map(option=>{const dates=calculate(option.plan);const appointment=option.requiresRebooking?`Request check-in for ${formatDay(dates.checkin.day)}`:option.plan.rebooked?`Keep the requested check-in on ${formatDay(dates.checkin.day)}`:`Keep check-in on ${formatDay(dates.checkin.day)}`;const internetTiming=option.plan.internetLag===0?'Internet starts the same day as the address pack':`Internet starts ${option.plan.internetLag} day${option.plan.internetLag===1?'':'s'} later`;const groupedTasks=option.parallelTasks.map(title=>title.replace('Confirm your housing','Housing').replace('Prepare address pack','Address pack').replace('Housing office check-in','Check-in').replace('Arrange home internet','Internet')).join(' + ');return `<button class="timing-option ${option.recommended?'recommended':''}" data-address-lag="${option.lag}"><span class="timing-option-top"><strong>${option.label}</strong>${option.recommended?'<em>Recommended</em>':''}</span><span class="timing-date">Address pack · ${formatDay(dates.address.day)}</span><small>${option.description}</small><span class="timing-assumption">${appointment} · ${internetTiming}</span>${option.parallelDay?`<span class="parallel-note">${formatDay(option.parallelDay)} · ${groupedTasks}</span>`:''}<span class="timing-result">${readinessLabel(dates,option.plan)} <b>Preview this plan →</b></span></button>`;}).join('')}</div></div>`;
+  return `<div class="timing-question" role="group" aria-labelledby="timing-title"><span>DECISION NEEDED</span><h3 id="timing-title">How much time do you need for the address pack?</h3><p>${formatDay(READY_BY_DAY)} is fixed. Each choice shows the work required to protect it.</p><div class="timing-options">${options.map(option=>{const dates=calculate(option.plan);const previouslyPreviewed=option.lag===state.selectedAddressLag;const appointment=option.requiresRebooking?`Request check-in for ${formatDay(dates.checkin.day)}`:option.plan.rebooked?`Keep the requested check-in on ${formatDay(dates.checkin.day)}`:`Keep check-in on ${formatDay(dates.checkin.day)}`;const internetTiming=option.plan.internetLag===0?'Internet starts the same day as the address pack':`Internet starts ${option.plan.internetLag} day${option.plan.internetLag===1?'':'s'} later`;const groupedTasks=option.parallelTasks.map(title=>title.replace('Confirm your housing','Housing').replace('Prepare address pack','Address pack').replace('Housing office check-in','Check-in').replace('Arrange home internet','Internet')).join(' + ');return `<button class="timing-option ${option.recommended?'recommended':''} ${previouslyPreviewed?'previously-previewed':''}" data-address-lag="${option.lag}"><span class="timing-option-top"><strong>${option.label}</strong><span class="timing-option-tags">${previouslyPreviewed?'<em class="last-previewed">Last previewed</em>':''}${option.recommended?'<em>Recommended</em>':''}</span></span><span class="timing-date">Address pack · ${formatDay(dates.address.day)}</span><small>${option.description}</small><span class="timing-assumption">${appointment} · ${internetTiming}</span>${option.parallelDay?`<span class="parallel-note">${formatDay(option.parallelDay)} · ${groupedTasks}</span>`:''}<span class="timing-result">${readinessLabel(dates,option.plan)} <b>Preview this plan →</b></span></button>`;}).join('')}</div></div>`;
 }
 
 function activeTimingSummary(plan){
@@ -181,7 +183,8 @@ function activeTimingSummary(plan){
   const parallel=Object.entries(loads).find(([,items])=>items.length>1);
   const grouped=parallel?`<p><strong>${formatDay(Number(parallel[0]))} · ${parallel[1].length} tasks</strong><br>${parallel[1].join(' · ')}</p>`:'';
   const pendingConfirmation=protectedDeadline&&plan.rebooked;
-  return `<div class="deadline-strategy ${protectedDeadline?'':'at-risk'}"><span>${!protectedDeadline?'DEADLINE AT RISK':pendingConfirmation?'PENDING CHECK-IN CONFIRMATION':'DEADLINE PROTECTED'}</span><strong>${readinessLabel(schedule,plan)}</strong>${grouped}<small>${protectedDeadline?(pendingConfirmation?`The requested check-in on ${formatDay(schedule.checkin.day)} is not confirmed yet.`:'The existing check-in stays unchanged.'):'Resolve the highlighted date before applying this plan.'}</small></div>`;
+  const compareAction=state.addressTimingBase&&state.selectedAddressLag!==null?'<button class="button button-outline timing-revisit" id="compare-address-timing-inline">Compare other options</button>':'';
+  return `<div class="deadline-strategy ${protectedDeadline?'':'at-risk'}"><span>${!protectedDeadline?'DEADLINE AT RISK':pendingConfirmation?'PENDING CHECK-IN CONFIRMATION':'DEADLINE PROTECTED'}</span><strong>${readinessLabel(schedule,plan)}</strong>${grouped}<small>${protectedDeadline?(pendingConfirmation?`The requested check-in on ${formatDay(schedule.checkin.day)} is not confirmed yet.`:'The existing check-in stays unchanged.'):'Resolve the highlighted date before applying this plan.'}</small>${compareAction}</div>`;
 }
 
 function conflictMarkup(task,result,plan){
@@ -223,9 +226,9 @@ function renderInspector(){
 
   const dateEditor=editable?`<div class="date-control"><label for="task-date">${dateLabel}</label><input id="task-date" type="date" min="2026-10-01" max="2026-10-${String(maxDay).padStart(2,'0')}" value="2026-10-${String(inputDay).padStart(2,'0')}" ${result.status==='blocked'&&result.day===null?'disabled':''}><p class="control-hint">Updates this step and its dependents.</p></div>${modeCard(task,result,plan)}`:`<div class="read-only-date"><span>${dateLabel}</span><strong class="${result.status==='conflict'?'text-danger':''}">${formatDay(result.day)}</strong></div>`;
   const impactList=state.draft&&!state.addressTimingPending?`<div class="detail-section impact-list"><h3>${laterEffects.length} OTHER ${laterEffects.length===1?'CHANGE':'CHANGES'} IN THIS PREVIEW</h3>${laterEffects.map(change=>`<button class="impact-item" data-impact="${change.id}"><span>${change.after.status==='conflict'?'!':change.after.status==='blocked'?'⊘':'↳'}</span><span><strong>${change.title}</strong><small>${impactDescription(change)}</small></span></button>`).join('')||'<p class="empty-small">This change does not move another date.</p>'}</div>`:'';
-  const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);const lag=edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:edge.from==='documents'?'Ready to use':'Same day';return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Suggested · inactive until accepted</small>':`<small>${lag}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
+  const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);const lag=edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:edge.from==='documents'?'Ready to use':'Same day';return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Design hypothesis · inactive until accepted</small>':`<small>${lag}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
   const unlocks=outgoing.length?`<div class="detail-section"><h3>THIS CAN MOVE</h3>${outgoing.map(edge=>`<button class="unlock-item" data-impact="${edge.to}"><span>↳</span>${taskById(edge.to).title}${edge.suggested?'<span class="suggestion-tag">?</span>':''}</button>`).join('')}</div>`:!incoming.length?'<div class="detail-section"><h3>INDEPENDENT STEP</h3><p class="empty-small">Changes elsewhere do not move this task.</p></div>':'';
-  const evidence=state.draft&&task.id!=='bank'?'':task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>Suggested link · inactive</span><p>This task is independent, so ${formatDay(result.day)} is valid. Your address could improve a nearby-branch comparison.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<details class="evidence-disclosure"><summary>Why this relationship?</summary><div class="evidence-card"><span>${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div></details>`;
+  const evidence=state.draft&&task.id!=='bank'?'':task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>Design hypothesis · inactive</span><p>The initial AI plan kept this task independent. I challenged that assumption because branch proximity and the practical timing of account setup may depend on my confirmed address.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<details class="evidence-disclosure"><summary>Why this relationship?</summary><div class="evidence-card"><span>${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div></details>`;
   const relationships=state.draft?'':`${dependencies}${unlocks}`;
   const bottom=task.kind==='complete'?'<p>Completed in this sample plan.</p>':task.kind==='milestone'?`<p>${formatDay(READY_BY_DAY)} is fixed. The planner checks whether the steps before it can meet that deadline.</p>`:'';
   const timing=state.addressTimingPending&&task.id==='housing'?addressTimingQuestion(plan):'';
@@ -253,6 +256,7 @@ function renderInspector(){
   $('#reopen-link')?.addEventListener('click',reopenLink);
   $('#accept-link')?.addEventListener('click',()=>reviewLink(true));
   $('#dismiss-link')?.addEventListener('click',()=>reviewLink(false));
+  $('#compare-address-timing-inline')?.addEventListener('click',reopenAddressTiming);
   document.querySelectorAll('[data-address-lag]').forEach(element=>element.addEventListener('click',()=>applyAddressTiming(Number(element.dataset.addressLag))));
   $('#task-date')?.addEventListener('change',event=>{
     const input=event.target,match=/^2026-10-(\d{2})$/.exec(input.value),day=match?Number(match[1]):NaN;
@@ -332,6 +336,7 @@ function render(){
   const issues=TASKS.filter(task=>schedule[task.id].status==='conflict');
   const overloads=dailyWorkload(plan).filter(item=>item.count>MAX_TASKS_PER_DAY);
   const pending=state.addressTimingPending&&Boolean(state.draft);
+  const canCompareTiming=Boolean(state.draft&&state.addressTimingBase&&state.selectedAddressLag!==null&&!pending);
   const deadlineAtRisk=schedule.ready.status==='blocked';
   const confirmationPending=schedule.ready.status==='planned'&&plan.rebooked;
 
@@ -341,6 +346,7 @@ function render(){
   $('.plan-overview').classList.toggle('decision',pending);
   $('#undo-button').hidden=!state.undo;
   $('#simulation-banner').hidden=!state.draft;
+  $('#compare-address-timing').hidden=!canCompareTiming;
   if(state.draft){
     $('#simulation-caption').textContent=pending?`Housing moved to ${formatDay(plan.housingDay)} · protect ${formatDay(READY_BY_DAY)}`:draftSummary(changes);
     $('#banner-compare').textContent=pending?'Choose address timing':deadlineAtRisk?'Fix deadline issue':issues.length?'Fix date conflict':overloads.length?'Fix daily workload':'Review change';
@@ -365,14 +371,23 @@ function setTaskDay(id,day,restoreId){
   const field=DATE_FIELDS[id],task=taskById(id);
   if(!field||!Number.isInteger(day)||day<1||day>(id==='housing'?20:31)) throw new Error('Choose a valid October date.');
   const before=calculate(current())[id];
-  const draft=clonePlan(state.draft||state.plan);
+  let draft=clonePlan(state.draft||state.plan);
   if(!state.draft&&(id==='housing'||id==='checkin')&&draft[field]===day) return;
+  if(id==='housing'&&state.addressTimingBase) draft=restoreAddressTimingChoice(draft,state.addressTimingBase);
   draft[field]=day;
   if(id==='housing'){
     state.addressTimingPending=day!==state.plan.housingDay;
-    if(!state.addressTimingPending){
-      for(const key of ['addressLag','internetLag','appointmentDay','internetDay','rebooked']) draft[key]=state.plan[key];
+    state.selectedAddressLag=null;
+    if(state.addressTimingPending){
+      state.addressTimingBase=clonePlan(draft);
+    }else{
+      for(const key of ['addressLag','internetLag','appointmentDay','rebooked']) draft[key]=state.plan[key];
+      state.addressTimingBase=null;
     }
+  }
+  if((id==='address'||id==='checkin')&&state.selectedAddressLag!==null){
+    state.addressTimingBase=null;
+    state.selectedAddressLag=null;
   }
   if(id==='checkin') draft.rebooked=day!==state.plan.appointmentDay||state.plan.rebooked;
   validatePlan(draft);
@@ -388,19 +403,38 @@ function setTaskDay(id,day,restoreId){
 
 function applyAddressTiming(lag){
   if(!state.draft||!state.addressTimingPending) return;
-  const option=addressTimingOptions(state.draft,state.plan).find(item=>item.lag===lag);
+  const timingBase=state.addressTimingBase?restoreAddressTimingChoice(state.draft,state.addressTimingBase):state.draft;
+  const option=addressTimingOptions(timingBase,state.plan).find(item=>item.lag===lag);
   if(!option){
     announce(`That timing cannot protect the ${formatDay(READY_BY_DAY)} deadline.`);
     return;
   }
   state.draft=clonePlan(option.plan);
   state.addressTimingPending=false;
+  state.addressTimingBase=clonePlan(timingBase);
+  state.selectedAddressLag=lag;
   state.selected='housing';
   state.lastEdited='housing';
   state.focused=true;
   render();
-  $('#banner-compare')?.focus({preventScroll:true});
+  $('#compare-address-timing-inline')?.focus({preventScroll:true});
   announce(option.plan.rebooked?`${option.label} previewed. Ready by ${formatDay(READY_BY_DAY)} if check-in on ${formatDay(option.schedule.checkin.day)} is confirmed.`:`${option.label} previewed. Ready by ${formatDay(READY_BY_DAY)} remains protected.`);
+}
+
+function reopenAddressTiming(){
+  if(!state.draft||!state.addressTimingBase||state.selectedAddressLag===null) return false;
+  state.draft=restoreAddressTimingChoice(state.draft,state.addressTimingBase);
+  state.addressTimingBase=clonePlan(state.draft);
+  state.addressTimingPending=true;
+  state.selected='housing';
+  state.lastEdited='housing';
+  state.focused=true;
+  render();
+  const lastChoice=document.querySelector(`[data-address-lag="${state.selectedAddressLag}"]`);
+  document.querySelector('.timing-question')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  lastChoice?.focus({preventScroll:true});
+  announce(`Timing options reopened. Housing stays on ${formatDay(state.draft.housingDay)}.`);
+  return true;
 }
 
 function resetToAutomatic(id){
@@ -418,6 +452,8 @@ function discardPreview(){
   state.draft=null;
   state.lastEdited=null;
   state.addressTimingPending=false;
+  state.addressTimingBase=null;
+  state.selectedAddressLag=null;
   render();
   announce('Preview discarded. Your saved plan is unchanged.');
 }
@@ -442,7 +478,7 @@ function reopenLink(){
   state.lastEdited='bank';
   render();
   $('#accept-link')?.focus({preventScroll:true});
-  announce('Address prerequisite reopened as an inactive suggestion.');
+  announce('Address prerequisite reopened as an inactive design hypothesis.');
 }
 
 function undo(){
@@ -451,6 +487,8 @@ function undo(){
   state.undo=null;
   state.draft=null;
   state.addressTimingPending=false;
+  state.addressTimingBase=null;
+  state.selectedAddressLag=null;
   const focusTask=state.lastEdited||'housing';
   state.selected=focusTask;
   render();
@@ -515,6 +553,8 @@ function openComparison(){
     state.plan=clonePlan(optionPlan);
     state.draft=null;
     state.addressTimingPending=false;
+    state.addressTimingBase=null;
+    state.selectedAddressLag=null;
     dialog.close();
     render();
     $('#undo-button').focus({preventScroll:true});
@@ -523,17 +563,18 @@ function openComparison(){
 }
 
 function showAbout(){
-  showDialog(`<div class="dialog-kicker">${icon('graph')} WHY THIS TOOL</div><h2 id="dialog-title">Seven cities taught me to stop treating a move like a checklist.</h2><p class="dialog-intro">A list shows what is due. A dependency map shows what will move, what must stay fixed, and where a person still needs to decide.</p><div class="about-facts"><p><strong>Personal starting point.</strong> This tool comes from Hayk’s experience living in seven cities over four years. The Tokyo-to-San Francisco dates and notes are an illustrative scenario, not official relocation requirements.</p><p><strong>Constraint hierarchy.</strong> Readiness on 17 October is a hard deadline. Arrival on 18 October is fixed context. Task spacing is a preference that can be compressed only after the person reviews the added workload.</p><p><strong>Interaction rule.</strong> Changes flow forward, never backward. The planner can group at most two tasks on one day, but it never moves an appointment silently or offers a plan that misses readiness.</p><p><strong>How AI contributed.</strong> AI helped structure the sample scenario, generate recovery alternatives, surface edge cases, and critique the interaction. The dates shown here come from visible local rules; no live model or external booking is connected.</p></div><button class="button button-primary" id="about-done">Back to the plan ${icon('arrow')}</button>`);
+  showDialog(`<div class="dialog-kicker">${icon('graph')} WHY THIS TOOL</div><h2 id="dialog-title">Seven cities taught me to stop treating a move like a checklist.</h2><p class="dialog-intro">A list shows what is due. A dependency map shows what will move, what must stay fixed, and where a person still needs to decide.</p><div class="about-facts"><p><strong>Personal starting point.</strong> This tool comes from Hayk’s experience living in seven cities over four years. The Tokyo-to-San Francisco dates and notes are an illustrative scenario, not official relocation requirements.</p><p><strong>Constraint hierarchy.</strong> Readiness on 17 October is a hard deadline. Arrival on 18 October is fixed context. Task spacing is a preference that can be compressed only after the person reviews the added workload.</p><p><strong>Interaction rule.</strong> Changes flow forward, never backward. The planner can group at most two tasks on one day, but it never moves an appointment silently or offers a plan that misses readiness.</p><p><strong>How AI contributed.</strong> AI helped structure the scenario, generate recovery alternatives, surface edge cases, and critique the interaction. It first treated banking as independent; Hayk challenged that assumption and made the possible address relationship reviewable. The dates shown here come from visible local rules; no live model or external booking is connected.</p></div><button class="button button-primary" id="about-done">Back to the plan ${icon('arrow')}</button>`);
   $('#about-done').onclick=()=>document.querySelector('dialog').close();
 }
 
 $('.surface-toolbar').innerHTML=`<div class="view-title">Dependency map</div><div class="graph-direction-hint">Arrows show active dependencies.</div>`;
 $('#graph-viewport').insertAdjacentHTML('afterend','<div id="steps-list" class="steps-list" hidden></div>');
-$('.workspace').insertAdjacentHTML('beforebegin',`<div id="simulation-banner" class="simulation-banner" hidden><div>${icon('edit')}<strong>UNSAVED CHANGE</strong><span id="simulation-caption"></span></div><div><button class="button button-quiet" id="discard-simulation">Reset preview</button><button class="button button-primary" id="banner-compare">Review change</button></div></div>`);
+$('.workspace').insertAdjacentHTML('beforebegin',`<div id="simulation-banner" class="simulation-banner" hidden><div>${icon('edit')}<strong>UNSAVED CHANGE</strong><span id="simulation-caption"></span></div><div><button class="button button-quiet" id="discard-simulation">Reset preview</button><button class="button button-quiet" id="compare-address-timing" hidden>Compare other options</button><button class="button button-primary" id="banner-compare">Review change</button></div></div>`);
 
 $('#about-button').onclick=showAbout;
 $('#undo-button').onclick=undo;
 $('#discard-simulation').onclick=discardPreview;
+$('#compare-address-timing').onclick=reopenAddressTiming;
 $('#banner-compare').onclick=()=>{
   if(state.addressTimingPending){
     selectTask('housing');
@@ -549,11 +590,12 @@ render();
 const context=document.modelContext;
 if(context?.registerTool){
   const controller=new AbortController();
-  const snapshot=()=>({plan:clonePlan(state.plan),preview:state.draft?clonePlan(state.draft):null,addressTimingPending:state.addressTimingPending,selectedTask:state.selected,schedule:calculate(current())});
+  const snapshot=()=>({plan:clonePlan(state.plan),preview:state.draft?clonePlan(state.draft):null,addressTimingPending:state.addressTimingPending,selectedAddressLag:state.selectedAddressLag,selectedTask:state.selected,schedule:calculate(current())});
   const definitions=[
     {name:'read_move_plan',title:'Read move plan',description:'Read the saved plan, staged preview, date modes, and calculated schedule.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute:()=>snapshot()},
     {name:'stage_task_date',title:'Change a move step date',description:'Stage an October 2026 completion date for an editable move step. The change flows only to descendants.',inputSchema:{type:'object',properties:{taskId:{type:'string',enum:Object.keys(DATE_FIELDS)},day:{type:'integer',minimum:1,maximum:31}},required:['taskId','day'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||Object.keys(input).some(key=>!['taskId','day'].includes(key))||!DATE_FIELDS[input.taskId]||!Number.isInteger(input.day)) throw new Error('Provide an editable taskId and an integer October day.');setTaskDay(input.taskId,input.day);return snapshot();}},
     {name:'stage_address_timing',title:'Choose address-pack timing',description:`After changing Housing, preview a same-day, one-day, or two-day address-pack plan that can meet ${formatDay(READY_BY_DAY)} and exposes any check-in request.`,inputSchema:{type:'object',properties:{lagDays:{type:'integer',enum:[0,1,2]}},required:['lagDays'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||Object.keys(input).some(key=>key!=='lagDays')||![0,1,2].includes(input.lagDays)) throw new Error('Choose lagDays 0, 1, or 2.');applyAddressTiming(input.lagDays);return snapshot();}},
+    {name:'reopen_address_timing',title:'Compare address-pack timing options',description:'Return a staged Housing change to its three address-pack timing choices without changing the saved plan.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:()=>{if(!reopenAddressTiming()) throw new Error('Choose an address-pack timing option before reopening the comparison.');return snapshot();}},
     {name:'inspect_move_step',title:'Inspect a move step',description:'Select a step and show its date mode, dependencies, and evidence.',inputSchema:{type:'object',properties:{taskId:{type:'string',enum:TASKS.map(task=>task.id)}},required:['taskId'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||Object.keys(input).some(key=>key!=='taskId')) throw new Error('Provide a taskId.');selectTask(input.taskId);return snapshot();}},
     {name:'reset_task_to_dependencies',title:'Reset a task to automatic',description:'Remove a manual date from an eligible task so it follows its dependencies again.',inputSchema:{type:'object',properties:{taskId:{type:'string',enum:['address','internet','bank']}},required:['taskId'],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:input=>{if(!input||!canFollow(input.taskId)) throw new Error('Choose a task that can follow dependencies.');resetToAutomatic(input.taskId);return snapshot();}},
     {name:'discard_move_preview',title:'Discard move preview',description:'Discard staged date and dependency changes.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute:()=>{discardPreview();return snapshot();}}
