@@ -32,7 +32,7 @@ Propagation is directional. A change affects the edited task and its descendants
 6. **Change an upstream source.** Moving Housing from 3 to 10 October shifts automatic descendants. The 8 October check-in remains fixed and becomes a visible conflict.
 7. **Compare recovery plans.** Option A requests a new check-in on 13 October and leaves a one-day arrival buffer. Option B secures Housing by 5 October and leaves a six-day buffer. Neither option is preselected.
 8. **Review, apply, and undo.** The before/after review includes date changes and scheduling-mode changes. Applying updates only the in-memory demo plan; Undo restores the prior dates and pin states.
-9. **Review AI input.** The Bank step shows an AI-suggested link as inactive until accepted. It can be dismissed or reopened.
+9. **Review AI input.** “Compare local banking options” is initially independent, so research can happen before the exact address is ready. Selecting it reveals a dotted, inactive suggestion asking whether the address should become a prerequisite for comparing nearby branches.
 
 ## Feedback implemented
 
@@ -47,7 +47,7 @@ Propagation is directional. A change affects the edited task and its descendants
 | The timeline should teach the model | It is always visible and states: “Dates flow forward. Earlier steps stay put; dependent steps recalculate.” Saved dates remain as dashed ghosts during a preview. |
 | Direct manipulation needed a precise alternative | Flexible dates support timeline drag; every editable task has one native date field for keyboard and exact input. Redundant sliders and plus/minus controls were removed. |
 | Fixed dates should not shift silently | The check-in is not draggable and is labeled as a fixed appointment. Rescheduling is explicit in the inspector. |
-| AI structure should remain advisory | The Bank connection is labeled as a suggestion and does not enter calculations until accepted. |
+| AI structure should remain advisory | Inactive suggestions are omitted from the default dependency map. Selecting Banking reveals the proposed link, explains why the address may matter, and lets the user preview its consequence before applying it. |
 | Mobile should remain usable | Narrow screens start in the linear Steps view, keep date-edit cues, and have no page-level horizontal overflow. |
 | Changes should be safe | All edits are staged, reviewed before apply, and immediately undoable. |
 
@@ -70,7 +70,7 @@ Propagation is directional. A change affects the edited task and its descendants
 5. Apply one option and undo it.
 6. Select Internet, move 7 October to 14 October, and show that earlier dates stay unchanged while Readiness moves to 17 October.
 7. Use “Follow dependencies again” to remove the pin.
-8. Optional closing trust moment: inspect the inactive AI-suggested Bank connection.
+8. Optional closing trust moment: inspect the inactive address-to-banking suggestion and decide whether research should remain independent.
 
 ## Why arbitrary event creation remains outside this prototype
 

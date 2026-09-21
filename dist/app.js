@@ -67,7 +67,7 @@ function statusLabel(task,result,plan=current()){
   if(result.status==='conflict') return 'Date conflict';
   if(result.status==='blocked') return 'Blocked by conflict';
   if(result.status==='late') return 'After arrival';
-  if(result.status==='review') return 'AI suggestion · review';
+  if(result.status==='review') return 'AI link · inactive';
   if(result.mode==='manual') return 'Date set by you';
   if(result.mode==='automatic') return 'Follows dependencies';
   if(result.mode==='fixed') return plan.rebooked?'Rebooking needed':'Fixed appointment';
@@ -92,7 +92,8 @@ function renderGraph(){
   const related=connectedIds(state.selected,plan);
   const changed=new Set(state.draft?impacts(state.plan,plan).map(task=>task.id):[]);
 
-  const paths=edges.map(edge=>{
+  const visibleEdges=edges.filter(edge=>!edge.suggested||state.selected==='bank');
+  const paths=visibleEdges.map(edge=>{
     const from=taskById(edge.from),to=taskById(edge.to);
     let d;
     if(edge.from==='checkin'&&edge.to==='ready') d=`M${from.x+216} ${from.y+56}H824Q836 ${from.y+56} 836 ${from.y+70}V${to.y+40}Q836 ${to.y+56} 820 ${to.y+56}H${to.x+222}`;
@@ -178,7 +179,7 @@ function renderInspector(){
   const impactList=state.draft?`<div class="detail-section impact-list"><h3>${laterEffects.length} OTHER ${laterEffects.length===1?'CHANGE':'CHANGES'} IN THIS PREVIEW</h3>${laterEffects.map(change=>`<button class="impact-item" data-impact="${change.id}"><span>${change.after.status==='conflict'?'!':change.after.status==='blocked'?'⊘':'↳'}</span><span><strong>${change.title}</strong><small>${change.after.status==='conflict'?`Conflict · earliest ${formatDay(change.after.earliest)}`:change.after.status==='blocked'?'Blocked until the earlier conflict is resolved':`${formatDay(change.before.day)} → ${formatDay(change.after.day)}`}</small></span></button>`).join('')||'<p class="empty-small">This change does not move another date.</p>'}</div>`:'';
   const dependencies=incoming.length?`<div class="detail-section"><h3>DEPENDS ON</h3>${incoming.map(edge=>{const source=taskById(edge.from);return `<button class="dependency-button" data-impact="${source.id}">${icon(source.icon)}<span>${source.title}${edge.suggested?'<small>Suggested · inactive until accepted</small>':`<small>${edge.lag?`${edge.lag} calendar day${edge.lag>1?'s':''} after`:'Ready to use'}</small>`}</span>${icon('arrow')}</button>`;}).join('')}</div>`:'';
   const unlocks=outgoing.length?`<div class="detail-section"><h3>THIS CAN MOVE</h3>${outgoing.map(edge=>`<button class="unlock-item" data-impact="${edge.to}"><span>↳</span>${taskById(edge.to).title}${edge.suggested?'<span class="suggestion-tag">?</span>':''}</button>`).join('')}</div>`:!incoming.length?'<div class="detail-section"><h3>INDEPENDENT STEP</h3><p class="empty-small">Changes elsewhere do not move this task.</p></div>':'';
-  const evidence=task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>${icon('spark')} AI-suggested connection</span><p>The address pack might be useful before comparing banks. This link has no effect until you approve it.</p><div><button id="accept-link" class="button button-outline">Accept link</button><button id="dismiss-link" class="button button-quiet">Dismiss</button></div></div>`:`<div class="evidence-card"><span>${icon('file')} ${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Link accepted':' · Link dismissed':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review again</button>':''}</div>`;
+  const evidence=task.id==='bank'&&!plan.bankReviewed?`<div class="assumption-card"><span>${icon('spark')} Suggested link · currently inactive</span><p>This task is independent, so ${formatDay(result.day)} is valid. AI suggests using your exact address to compare nearby branches; preview the link to see its consequence.</p><div><button id="accept-link" class="button button-outline">Preview dependency</button><button id="dismiss-link" class="button button-quiet">Keep independent</button></div></div>`:`<div class="evidence-card"><span>${icon('file')} ${task.source}</span><p>“${task.note}”</p><small>${task.sourceType}${task.id==='bank'&&plan.bankReviewed?plan.bankDependency?' · Address is a prerequisite':' · Kept independent':''}</small>${task.id==='bank'&&plan.bankReviewed?'<button class="button button-quiet" id="reopen-link">Review dependency again</button>':''}</div>`;
   const bottom=state.draft
     ?conflicts.length
       ?result.status==='conflict'
@@ -365,7 +366,7 @@ function reviewLink(accepted){
   state.selected='bank';
   state.lastEdited='bank';
   render();
-  announce(accepted?'Connection staged. Banking now follows the address pack.':'Connection dismissal staged. Banking stays independent.');
+  announce(accepted?'Dependency previewed. Banking now follows the address pack.':'Banking research remains independent.');
 }
 
 function reopenLink(){
@@ -377,7 +378,7 @@ function reopenLink(){
   state.lastEdited='bank';
   render();
   $('#accept-link')?.focus({preventScroll:true});
-  announce('Connection reopened as a suggestion.');
+  announce('Address prerequisite reopened as an inactive suggestion.');
 }
 
 function undo(){
@@ -463,9 +464,9 @@ function showAbout(){
   $('#about-done').onclick=()=>document.querySelector('dialog').close();
 }
 
-$('.surface-toolbar').innerHTML=`<div class="view-title">${icon('graph')} Dependency map</div><div class="view-switch" aria-label="Plan presentation"><button data-view="map" class="active" aria-pressed="true">Map</button><button data-view="list" aria-pressed="false">Steps</button></div>`;
+$('.surface-toolbar').innerHTML=`<div class="view-title">${icon('graph')} Dependency map</div><div class="graph-direction-hint">Arrows point from prerequisite → dependent step</div><div class="view-switch" aria-label="Plan presentation"><button data-view="map" class="active" aria-pressed="true">Map</button><button data-view="list" aria-pressed="false">Steps</button></div>`;
 $('#graph-viewport').insertAdjacentHTML('afterend','<div id="steps-list" class="steps-list" hidden></div>');
-$('.graph-legend').innerHTML='<span><i class="legend-line"></i> Follows dependencies</span><span><i class="legend-pin"></i> Date set by you</span><span><i class="legend-fixed"></i> Fixed appointment</span><span><i class="legend-line dotted"></i> AI suggestion</span>';
+$('.graph-legend').innerHTML='<span><i class="legend-line"></i> Active dependency</span><span><i class="legend-pin"></i> Date set by you</span><span><i class="legend-fixed"></i> Fixed appointment</span><span><i class="legend-line dotted"></i> Suggested link · inactive</span>';
 $('.workspace').insertAdjacentHTML('beforebegin',`<div id="simulation-banner" class="simulation-banner" hidden><div>${icon('edit')}<strong>UNSAVED CHANGE</strong><span id="simulation-caption"></span></div><div><button class="button button-quiet" id="discard-simulation">Reset preview</button><button class="button button-primary" id="banner-compare">Review change</button></div></div>`);
 
 $('#about-button').onclick=showAbout;

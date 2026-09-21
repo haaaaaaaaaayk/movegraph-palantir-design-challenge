@@ -24,7 +24,7 @@ export const TASKS = [
   {id:'address',title:'Prepare address pack',category:'Documents',kind:'flexible',x:300,y:246,icon:'folder',description:'Gather your housing confirmation and prepared ID documents into one pack. You have allowed two calendar days.',note:'Once housing is confirmed, allow two days to assemble my pack.',source:'Your planning notes',sourceType:'Accepted scenario note'},
   {id:'checkin',title:'Housing office check-in',category:'Appointment',kind:'fixed',x:576,y:86,icon:'calendar',description:'A sample online appointment with your housing coordinator. In this scenario, your address pack must be ready the previous day.',note:'Online check-in on 8 October. Please have the pack ready the day before.',source:'Housing coordinator’s note',sourceType:'Fictional appointment'},
   {id:'internet',title:'Arrange home internet',category:'Getting settled',kind:'flexible',x:576,y:246,icon:'wifi',description:'Compare internet arrangements using the address in your pack. You have allocated two calendar days for this task.',note:'I want to compare internet arrangements after my address pack is ready.',source:'Your planning notes',sourceType:'Accepted scenario note'},
-  {id:'bank',title:'Choose a local bank',category:'Getting settled',kind:'flexible',x:300,y:406,icon:'bank',description:'Compare your banking options. AI suggested a possible link to the address pack, but it will not affect the plan until you approve it.',note:'Maybe I should wait for the address pack before comparing banks. Does this actually need to be a dependency?',source:'AI-suggested connection',sourceType:'Unverified planning suggestion'},
+  {id:'bank',title:'Compare local banking options',category:'Getting settled',kind:'flexible',x:300,y:406,icon:'bank',description:'Research fees, services, and broad availability before deciding where to open an account. Your exact address might improve a nearby-branch comparison.',note:'I can compare providers before my address is final. The address may matter later if nearby branches influence my choice.',source:'AI-suggested dependency',sourceType:'Unverified planning suggestion'},
   {id:'ready',title:'Ready for arrival',category:'Milestone',kind:'milestone',x:576,y:406,icon:'flag',description:'Your personal preparation milestone: check-in complete and internet arrangements made, with three days allowed for final checks.',note:'Leave three days after arranging internet, and at least a day after check-in, for final preparation.',source:'Your planning notes',sourceType:'Accepted scenario note'}
 ];
 
@@ -104,7 +104,7 @@ export function impacts(before,after){
 }
 
 export function connectedIds(id,plan){
-  const edges=edgesFor(plan),set=new Set([id]);
+  const edges=edgesFor(plan).filter(edge=>!edge.suggested||id==='bank'),set=new Set([id]);
   function walk(node,direction){
     for(const edge of edges){
       if(edge[direction==='down'?'from':'to']===node){

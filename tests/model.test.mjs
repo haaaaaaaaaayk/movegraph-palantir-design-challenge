@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {INITIAL_PLAN,calculate,edgesFor,recoveries,impacts,validatePlan} from '../dist/model.mjs';
+import {INITIAL_PLAN,calculate,edgesFor,connectedIds,recoveries,impacts,validatePlan} from '../dist/model.mjs';
 
 test('automatic dates flow forward from housing while fixed and independent dates stay put',()=>{
   const delayed=calculate({...INITIAL_PLAN,housingDay:10});
@@ -62,6 +62,12 @@ test('suggested dependencies change dates only after acceptance',()=>{
   assert.equal(calculate(delayed).bank.day,6);
   assert.equal(calculate({...delayed,bankDependency:true,bankReviewed:true}).bank.day,13);
   assert.equal(edgesFor({...delayed,bankReviewed:true}).some(edge=>edge.to==='bank'),false);
+});
+
+test('inactive suggestions do not look active from another task',()=>{
+  assert.equal(connectedIds('address',INITIAL_PLAN).has('bank'),false);
+  assert.equal(connectedIds('bank',INITIAL_PLAN).has('address'),true);
+  assert.equal(connectedIds('address',{...INITIAL_PLAN,bankDependency:true,bankReviewed:true}).has('bank'),true);
 });
 
 test('both fixed-appointment recovery options resolve the conflict',()=>{
