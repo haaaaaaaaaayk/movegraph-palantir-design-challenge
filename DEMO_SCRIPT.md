@@ -1,47 +1,52 @@
-# MoveGraph three-minute pitch
+# Three-minute move planner video
 
-## Assignment fit
+## What the assignment asks for
 
-MoveGraph answers **Lens B: Make it click**. It turns a tangled relocation system into a legible, usable dependency model. It is also working software, which goes beyond the clickable-prototype requirement. The submission should feel like a pitch with a focused proof, not a tour of every screen.
+Use **Lens B: Make it click**. Present this as a pitch for a personally meaningful solution, while showing the working product as proof. The video must explain the problem, the design approach and decisions, the role of AI, the most important interaction, and what you would do next. Keep the unlisted YouTube video under three minutes.
 
-## Recording setup
+## Before recording
 
-- Use a desktop browser at 100% zoom with the window about 1440 × 900.
-- Reload immediately before recording so the original plan is visible and **Confirm your housing** is selected.
-- Keep the cursor visible. Pause over changed nodes and recovery assumptions long enough for them to be read.
-- Use the date field rather than dragging timeline markers; exact input is easier for viewers to follow.
+- Use a desktop browser at 100% zoom, ideally around 1440 × 900.
+- Reload immediately before recording. The plan should say **On track**, with Housing on 10 Oct and arrival on 18 Oct.
+- Keep the cursor visible and move it deliberately. Do not read every label on screen.
+- Use the exact date field for the demo. The timeline drag interaction exists, but the field is clearer on video.
 
-## Exact click path
+## Exact actions
 
-| Time | Action | What should appear |
+| Time | What to do | What the viewer should notice |
 | --- | --- | --- |
-| 0:00–0:25 | Do not click yet. Introduce the personal problem and Lens B over the baseline map. | Tokyo → San Francisco, an on-track plan, and explicit dependencies. |
-| 0:25–0:45 | **Confirm your housing** is already selected. Click **Planned completion**, choose **10 October 2026**, then press Tab or click outside the field. | Address pack and Internet move later. The fixed 8 Oct check-in becomes a red conflict. Readiness is blocked. The blue preview banner and timeline appear. |
-| 0:45–1:20 | Click **Compare recovery plans** in the blue banner. Pause on both visible cards, then click only **Option A · keep earlier work**. | Both options expose their action, assumption, dates, and arrival buffer. Option A requests check-in on 13 Oct and leaves a one-day buffer. Option B requires housing by 5 Oct and leaves a six-day buffer. Selecting A reveals its exact before/after changes. |
-| 1:20–1:35 | Click **Apply option A**, then click **Undo change** at the top right. | The rebooked plan saves without claiming an external booking changed; Undo restores every original date and mode. |
-| 1:35–1:52 | Click **Arrange home internet**. Click its date field, choose **14 October 2026**, then press Tab. | Internet becomes pinned. Housing, address pack, and check-in stay unchanged; only readiness moves to 17 Oct. |
-| 1:52–1:59 | Click **Follow dependencies** in the inspector. | Internet returns to 7 Oct and the preview closes. |
-| 1:59–2:20 | Click **Compare local banking options**, point to the dotted edge, then click **Preview dependency**. | The illustrative AI suggestion changes only the staged draft. Point to **Review change**, then click **Reset preview**; commitment would require that separate review-and-apply step. |
-| 2:20–2:55 | Leave the baseline on screen. Explain the concrete AI collaboration, the design decisions you retained, and the deterministic rules that keep the result inspectable. | The final frame is the clean, on-track plan. |
+| 0:00–0:32 | Do not click. Briefly trace the three stages and their arrows. Point to **Start date**, **Automatic**, **Fixed appointment**, **Suggested · inactive**, and **Calculated**. | The graph exposes dependencies and the source of each date. The header keeps the 18 Oct arrival visible. |
+| 0:32–1:03 | Housing is already selected. Click **Planned completion**, choose **12 October 2026**, then press Tab. Scroll just enough to show **Timeline preview**, then return to the blue banner. | Address Pack moves 12 → 14 Oct; Internet moves 14 → 16 Oct. The 13 Oct fixed check-in becomes a conflict. Arrival stays on 18 Oct. Saved and preview dates remain visible together. |
+| 1:03–1:38 | Click **Compare recovery plans**. Pause on both cards, then click **Option A · keep earlier work**. | Option A requests check-in on 15 Oct and makes Readiness 19 Oct, one day after arrival. Option B restores Housing to 10 Oct and keeps a one-day buffer. Each assumption is explicit. |
+| 1:38–1:53 | Click **Apply option A**, then click **Undo change** at the top right. | The app records **Rebooking needed**; it does not claim a booking changed. Undo restores all dates and modes. |
+| 1:53–2:12 | Click **Arrange home internet**. Change its date from 14 to **16 October 2026**. Then click **Follow dependencies**. | Earlier work stays put; only Readiness moves to 19 Oct. Internet stays pinned until it returns to automatic scheduling. |
+| 2:12–2:31 | Click **Compare local banking options**. Point to the dotted edge, click **Preview dependency**, point to **Review change**, then click **Reset preview**. | The illustrative AI suggestion is inactive by default. Preview changes only the draft; saving still requires review and apply. |
+| 2:31–2:56 | Leave the restored baseline visible while explaining how Codex was used and what you would build next. | End on a calm, on-track plan. |
 
 ## Spoken script
 
-**0:00–0:25 — Why and framing**  
-“Over four years, I lived in seven cities. Every move looked like a checklist, but one late step could quietly break several others. For Palantir’s ‘Make it click’ lens, I built MoveGraph, a working dependency model for a Tokyo-to-San Francisco move. Change one date, see what follows, and keep control of the decision.”
+**0:00–0:32 — Personal problem and product model**
 
-**0:25–1:20 — The hard interaction**  
-“I’ll move housing from October third to the tenth. Automatic tasks move forward, but the fixed check-in does not silently move. It becomes a visible conflict, and readiness is withheld because it can no longer be trusted. MoveGraph compares two recoveries: preserve later housing and request a new appointment, or preserve the appointment by securing housing earlier. Both show their assumption and arrival buffer before I commit.”
+“Hey, I’m Hayk. Over four years I lived in seven cities, most recently moving from Tokyo to San Francisco. This is the tool I wish I’d had. A move looks like a checklist, but behaves like a dependency system. Housing unlocks an address pack, which unlocks check-in and internet. My flight is booked for October eighteenth, so arrival is a fixed constraint.”
 
-**1:20–1:35 — Safe commitment**  
-“I’ll apply the first plan. This updates my plan; it does not pretend the appointment was rebooked. The whole decision is immediately reversible.”
+**0:32–1:03 — A two-day delay**
 
-**1:35–1:59 — Editing a later event**  
-“A later edit behaves differently. If I pin Internet to October fourteenth, nothing upstream changes; only readiness moves. ‘Follow dependencies’ releases that boundary. Forward-only propagation makes direct editing predictable.”
+“Housing is due October tenth. Let’s say it slips two days. I edit that event to the twelfth. The address pack moves from the twelfth to the fourteenth, and internet moves to the sixteenth. Check-in stays fixed on the thirteenth, so the app surfaces a conflict. Readiness is blocked, while the timeline preserves the saved dates beside my preview.”
 
-**1:59–2:20 — Human judgment around AI**  
-“During ideation, AI suggested that choosing a bank might depend on my address. I encoded that as unverified: dotted and inactive. Previewing changes only the staged draft; a separate review and apply would commit it. There is no live AI scheduler.”
+**1:03–1:53 — Decide, apply, and undo**
 
-**2:20–2:55 — Process and close**  
-“I used Codex to generate alternatives, implement and test the dependency engine, and critique the interaction. I made the product calls: rejecting a generic seven-day simulator, enabling direct edits to later events, and requiring forward-only propagation, preview, and undo. The scheduler uses explicit local rules, so every outcome is explainable. With more time, I would add event creation and test with people planning real international moves. MoveGraph makes a tangled decision legible without taking agency away.”
+“Now I can compare two recovery plans. I can keep the delay and request check-in on the fifteenth, becoming ready one day after arrival. Or I can protect the appointment by securing housing on the tenth, restoring a one-day buffer. Each option states its assumption before I commit. I’ll apply the first. It records that rebooking is needed; it doesn’t pretend the booking changed. Undo restores the plan.”
 
-This script is about 300 words. At a calm pace, it leaves time for the visual pauses and clicks while staying below three minutes.
+**1:53–2:12 — Change a later event**
+
+“A later deadline can change too. I pin internet to the sixteenth; earlier steps stay untouched, and only readiness moves. ‘Follow dependencies’ releases my override. Changes flow forward, not backward.”
+
+**2:12–2:31 — Keep AI advisory**
+
+“AI suggested that choosing a bank might depend on my address. I kept that link dotted and inactive. I can preview it, but saving still requires my review and approval. The person remains in control.”
+
+**2:31–2:56 — How AI helped and what is next**
+
+“I used Codex to explore alternatives, implement and test the dependency engine, and critique the interaction. I chose to remove the confusing seven-day simulation, let people edit planned steps directly, and add preview and undo. The scheduling logic stays explicit and explainable. Next, I’d add event creation and test this with people planning real international moves.”
+
+The spoken script is 310 words, leaving a buffer for pauses and clicks while staying below three minutes at a natural pace.

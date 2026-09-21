@@ -1,7 +1,7 @@
 export const INITIAL_PLAN = Object.freeze({
-  housingDay:3,
+  housingDay:10,
   addressDay:null,
-  appointmentDay:8,
+  appointmentDay:13,
   internetDay:null,
   bankDay:null,
   bankDependency:false,
@@ -22,7 +22,7 @@ export const TASKS = [
   {id:'housing',title:'Confirm your housing',category:'Housing',kind:'flexible',x:24,y:246,icon:'home',description:'Get written confirmation of your room and the address from your housing coordinator.',note:'I’ll put my address pack together once my room is confirmed.',source:'Your planning notes',sourceType:'Accepted scenario note'},
   {id:'travel',title:'Book your journey',category:'Travel',kind:'complete',day:0,x:24,y:406,icon:'plane',description:'Your journey from Tokyo to San Francisco is arranged for 18 October. This booking is independent of the preparation tasks.',note:'My travel booking is already arranged. I will arrive in San Francisco on 18 October.',source:'Your itinerary',sourceType:'Illustrative booking'},
   {id:'address',title:'Prepare address pack',category:'Documents',kind:'flexible',x:300,y:246,icon:'folder',description:'Gather your housing confirmation and prepared ID documents into one pack. You have allowed two calendar days.',note:'Once housing is confirmed, allow two days to assemble my pack.',source:'Your planning notes',sourceType:'Accepted scenario note'},
-  {id:'checkin',title:'Housing office check-in',category:'Appointment',kind:'fixed',x:576,y:86,icon:'calendar',description:'A sample online appointment with your housing coordinator. In this scenario, your address pack must be ready the previous day.',note:'Online check-in on 8 October. Please have the pack ready the day before.',source:'Housing coordinator’s note',sourceType:'Fictional appointment'},
+  {id:'checkin',title:'Housing office check-in',category:'Appointment',kind:'fixed',x:576,y:86,icon:'calendar',description:'A sample online appointment with your housing coordinator. In this scenario, your address pack must be ready the previous day.',note:'Online check-in on 13 October. Please have the pack ready the day before.',source:'Housing coordinator’s note',sourceType:'Fictional appointment'},
   {id:'internet',title:'Arrange home internet',category:'Getting settled',kind:'flexible',x:576,y:246,icon:'wifi',description:'Compare internet arrangements using the address in your pack. You have allocated two calendar days for this task.',note:'I want to compare internet arrangements after my address pack is ready.',source:'Your planning notes',sourceType:'Accepted scenario note'},
   {id:'bank',title:'Compare local banking options',category:'Getting settled',kind:'flexible',x:300,y:406,icon:'bank',description:'Research fees, services, and broad availability before deciding where to open an account. Your exact address might improve a nearby-branch comparison.',note:'I can compare providers before my address is final. The address may matter later if nearby branches influence my choice.',source:'AI-suggested dependency',sourceType:'Unverified planning suggestion'},
   {id:'ready',title:'Ready for arrival',category:'Milestone',kind:'milestone',x:576,y:406,icon:'flag',description:'Your personal preparation milestone: check-in complete and internet arrangements made, with three days allowed for final checks.',note:'Leave three days after arranging internet, and at least a day after check-in, for final preparation.',source:'Your planning notes',sourceType:'Accepted scenario note'}

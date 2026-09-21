@@ -24,13 +24,13 @@ Propagation is directional. A change affects the edited task and its descendants
 
 ## End-to-end walkthrough completed
 
-1. **Understand the baseline.** The plan opens on track. Housing is confirmed on 3 October, the check-in is fixed on 8 October, the plan is ready on 10 October, and one AI-suggested dependency requires review.
+1. **Understand the baseline.** The plan opens on track. Housing is due on 10 October, the address pack follows on 12 October, the check-in is fixed on 13 October, and the plan is ready on 17 October—one day before the booked 18 October arrival.
 2. **Select the object first.** Any editable node, or Step row on a narrow screen, opens the same date control. There is no separate simulation launcher.
-3. **Edit a later task.** Moving Internet from 7 to 14 October creates a manual pin. Housing stays on 3 October, the Address Pack stays on 5 October, and Readiness moves to 17 October.
-4. **Return to the system rule.** “Follow dependencies again” removes that pin and returns Internet to its earliest valid date, 7 October.
-5. **Expose an impossible intent.** Pinning Internet to 6 October preserves the requested date, explains that 7 October is the earliest valid date, and blocks Readiness. The user can use the earliest date or return the task to automatic scheduling.
-6. **Change an upstream source.** Moving Housing from 3 to 10 October shifts automatic descendants. The 8 October check-in remains fixed and becomes a visible conflict.
-7. **Compare recovery plans.** Option A requests a new check-in on 13 October and leaves a one-day arrival buffer. Option B secures Housing by 5 October and leaves a six-day buffer. Neither option is preselected.
+3. **Edit a later task.** Moving Internet from 14 to 16 October creates a manual pin. Housing stays on 10 October, the Address Pack stays on 12 October, and Readiness moves from 17 to 19 October.
+4. **Return to the system rule.** “Follow dependencies again” removes that pin and returns Internet to its earliest valid date, 14 October.
+5. **Expose an impossible intent.** Pinning Internet to 13 October preserves the requested date, explains that 14 October is the earliest valid date, and blocks Readiness. The user can use the earliest date or return the task to automatic scheduling.
+6. **Change an upstream source.** Moving Housing from 10 to 12 October shifts the Address Pack from 12 to 14 October and Internet from 14 to 16 October. The 13 October check-in and 18 October arrival remain fixed; the check-in becomes a visible conflict.
+7. **Compare recovery plans.** Option A requests a new check-in on 15 October and makes the plan ready on 19 October, one day after arrival. Option B restores Housing to 10 October, preserves the 13 October appointment, and keeps a one-day arrival buffer. Neither option is preselected.
 8. **Review, apply, and undo.** The before/after review includes date changes and scheduling-mode changes. Applying updates only the in-memory demo plan; Undo restores the prior dates and pin states.
 9. **Review AI input.** “Compare local banking options” is initially independent, so research can happen before the exact address is ready. Selecting it reveals a dotted, inactive suggestion asking whether the address should become a prerequisite for comparing nearby branches.
 
@@ -65,11 +65,11 @@ Propagation is directional. A change affects the edited task and its descendants
 ## Three-minute-ready product path
 
 1. Open with the personal problem: seven cities in four years taught Hayk that a move is a system, not a checklist.
-2. Select Housing and change 3 October to 10 October.
-3. Show the automatic Address Pack and Internet dates moving while the fixed check-in stays on 8 October and becomes a conflict.
+2. Select Housing and change 10 October to 12 October.
+3. Show the automatic Address Pack and Internet dates moving while the fixed check-in stays on 13 October and the booked 18 October arrival remains unchanged.
 4. Compare the two transparent recovery plans by required action and arrival buffer.
 5. Apply one option and undo it.
-6. Select Internet, move 7 October to 14 October, and show that earlier dates stay unchanged while Readiness moves to 17 October.
+6. Select Internet, move 14 October to 16 October, and show that earlier dates stay unchanged while Readiness moves to 19 October.
 7. Use “Follow dependencies again” to remove the pin.
 8. Optional closing trust moment: inspect the inactive address-to-banking suggestion and decide whether research should remain independent.
 

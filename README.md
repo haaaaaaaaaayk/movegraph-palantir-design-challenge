@@ -19,7 +19,7 @@ Open http://127.0.0.1:4173. No install or build step is required.
 3. Follow the directional rule: earlier steps stay put; the selected step and its descendants recalculate.
 4. A flexible date normally **follows dependencies**. Editing it creates a **date set by you** that stays pinned until it is changed or returned to automatic scheduling.
 5. If an upstream change makes a pinned date impossible, the requested date remains visible, the earliest valid date is explained, and descendants remain blocked until the conflict is repaired.
-6. Review and apply the change, then use **Undo change** to restore the prior plan. A delayed housing date still exposes two recovery plans for the fixed check-in.
+6. Review and apply the change, then use **Undo change** to restore the prior plan. Delaying Housing from 10 to 12 October exposes two recovery plans for the fixed 13 October check-in while the booked 18 October arrival stays unchanged.
 7. Inspect **Compare local banking options** and decide whether the address should become a prerequisite. The suggestion is hidden from the default map because it is inactive; selecting the task reveals it for review.
 
 The dependency map and inspector stay focused on the current plan. The comparison timeline appears only after an edit, when before-and-after context is useful. Fixed appointments can be rescheduled in the inspector but never move automatically. Completed steps and calculated milestones are read-only.
