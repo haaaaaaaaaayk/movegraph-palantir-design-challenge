@@ -2,6 +2,18 @@
 
 A working interaction prototype inspired by Hayk’s experience living in seven cities over four years. It was created for a Palantir Product Design Show & Tell and uses a Tokyo-to-San Francisco move to explore a difficult planning question: when one date changes, what should move, what must stay fixed, and what decision belongs to the person?
 
+## How Hayk worked with AI
+
+**AI provided speed; Hayk provided product judgment.** The project developed through an ongoing critique loop rather than a single prompt that generated the finished interface.
+
+1. **Explore the right problem.** Hayk gave AI the challenge brief, the product-design role, Palantir’s operational domains, and several personal starting points. AI helped generate and compare ten possible directions. Hayk rejected ideas that were less relevant or would require invented evidence, including Run Lens without wearable data, and selected move planning because it was grounded in his experience across seven cities.
+2. **Build a testable first version.** AI helped translate the relocation problem into a dependency graph and implement the initial HTML, CSS, JavaScript, and scheduling model. That version made the concept tangible, but it also exposed weak assumptions: it began with a preset seven-day delay, treated Housing as the only meaningful input, and carried timing gaps forward too confidently.
+3. **Challenge the output through use.** Hayk repeatedly used the prototype and identified where its behavior did not make sense. He required direct date editing, later-task editing, forward-only propagation, visible date ownership, and a hard 17 October readiness deadline after catching the system placing “Ready” after arrival. He also challenged the AI-generated assumption that Banking was independent of the address, while keeping his alternative as a reviewable hypothesis because it is not universally true.
+4. **Turn critique into interaction rules.** When the system could not know how long an Address Pack needed, Hayk changed it to ask the person rather than invent a duration. He introduced a two-task daily capacity, kept external appointment changes visibly unconfirmed, and added review, apply, undo, and **Compare other options** after discovering that preview had become a one-way door.
+5. **Simplify and verify.** AI helped implement each revision, enumerate edge cases, critique responsive and keyboard behavior, and build deterministic tests. Hayk removed the logo, sidebar, permanent timeline, repeated copy, and decorative controls; applied the supplied design reference; and decided which states and explanations deserved space. The resulting scheduling behavior is covered by 20 model tests.
+
+The shipped prototype does not call a live AI model. AI assisted the design and implementation process; the product itself uses explicit local rules so every date and consequence can be explained and tested.
+
 ## Run
 
 Serve the static `dist` directory over HTTP:
