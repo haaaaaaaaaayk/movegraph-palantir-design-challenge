@@ -26,6 +26,7 @@ The pattern across the whole process was consistent: you used the prototype, fou
 ## Before recording
 
 - Use a desktop browser at 100% zoom, ideally around 1440 × 900.
+- Open **Before** at http://127.0.0.1:4174 and **After** at https://movegraph-hayk.chaeyeonkimwork.chatgpt.site/ in adjacent tabs.
 - Reload immediately before recording. Confirm the header says **Tokyo → San Francisco · Arrive 18 Oct**, the plan says **On track**, Housing is 10 Oct, and **Ready by 17 Oct** is visible.
 - Housing is selected on load. Keep the cursor visible and move it deliberately.
 - Use the date field rather than dragging the timeline; it is easier to follow in a short recording.
@@ -39,7 +40,10 @@ The pattern across the whole process was consistent: you used the prototype, fou
 | 0:28–0:43 | In the selected Housing inspector, click **Planned completion**, choose **12 October 2026**, then press Tab or click outside the field. | A real date edit starts the scenario. The product asks for missing information instead of assuming every later task should move by two days. |
 | 0:43–1:20 | Pause on the three choices. Click **2 days later**, point to the grouped work and requested Check-in, click **Compare other options**, then click **2 days later** again. Click **Review change**, show the before/after rows, click **Apply this plan**, and click **Undo change**. | The strongest interaction gets enough time to breathe: compare strategies, expose uncertainty, review before commit, and reverse the result. |
 | 1:20–1:39 | Click **Compare local banking options** and point to the dotted relationship and **Design hypothesis**. | AI supplied the independent baseline; Hayk challenged it and kept his alternative reviewable rather than presenting it as fact. |
-| 1:39–2:50 | Click **About**. Leave it open while explaining the iteration process and the division between AI speed and human judgment. Click **Back to the plan** at the end. | The product becomes evidence of critical thinking, interaction design, visual editing, and technical collaboration. |
+| 1:39–1:55 | Stay on the current prototype while explaining how you filtered the initial directions. | The selected problem is grounded in lived experience rather than invented evidence. |
+| 1:55–2:10 | Switch to the **Before** tab. Point to the sidebar, branding, and permanent timeline, then click **Simulate a change**. | The first version was visually crowded and began with a preset seven-day scenario controlled mainly through Housing. |
+| 2:10–2:33 | Switch back to **After**. Point to the direct Housing date field and the simplified workspace. | Each critique became a visible product decision: direct editing, forward-only propagation, a fixed deadline, contextual comparison, and less chrome. |
+| 2:33–2:50 | Click **About**. Leave it open for the final lines, then click **Back to the plan**. | AI accelerated exploration and testing; Hayk supplied direction, critique, and product judgment. |
 
 ## Spoken script
 

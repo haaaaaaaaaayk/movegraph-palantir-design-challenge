@@ -2,6 +2,8 @@
 
 This is interview and demo preparation for the Palantir Product Design Show & Tell. It documents the actual iteration path: what the first prototype assumed, what Hayk challenged while using it, what changed, and how AI contributed. The dates and move details in the prototype are illustrative. No external user study was conducted for this exercise.
 
+The exact first working build is preserved in `archive/first-prototype/` from commit `d86a5ab`, so the demo can show the original interaction beside the current product rather than reconstructing a before state.
+
 ## Why this was the right problem
 
 The brief asks candidates to use AI to build something personally meaningful and explain the problem, decisions, challenges, and AI collaboration in a three-minute video. I chose **Lens B: Make it click** because the strongest opportunity was not another dashboard; it was making a tangled decision system understandable.

@@ -12,6 +12,23 @@ python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
 
 Open http://127.0.0.1:4173. No install or build step is required.
 
+## Before-and-after demo
+
+The repository contains both ends of the design process without mixing their source:
+
+- `dist/` is the current Tokyo-to-San Francisco prototype.
+- `archive/first-prototype/` is a frozen copy of the first working prototype from commit `d86a5ab`. It retains the original San Francisco-to-Berlin story, sidebar, MoveGraph branding, permanent timeline, and preset seven-day simulation.
+
+Run the historical version on a second port:
+
+```sh
+python3 -m http.server 4174 --bind 127.0.0.1 --directory archive/first-prototype/dist
+```
+
+Use http://127.0.0.1:4174 for **Before** and either http://127.0.0.1:4173 or the [hosted prototype](https://movegraph-hayk.chaeyeonkimwork.chatgpt.site/) for **After**. The archived copy has no Sites hosting configuration, so it cannot replace the current deployment.
+
+The final spoken script is available as `output/pdf/Hayk_Palantir_Final_Demo_Script.pdf`. `DEMO_SCRIPT.md` contains the synchronized click sequence, including the before-and-after tab switch.
+
 ## Scheduling rules
 
 - **17 October is the hard ready-by deadline.** It never moves in response to a delayed task.
@@ -49,6 +66,9 @@ This prototype was developed with AI assistance. AI helped structure the scenari
 node --test tests/model.test.mjs
 node --check dist/app.js
 node --check dist/model.mjs
+node --test archive/first-prototype/tests/model.test.mjs
+node --check archive/first-prototype/dist/app.js
+node --check archive/first-prototype/dist/model.mjs
 ```
 
-The model tests cover the fixed deadline and arrival date, the three address-pack timing choices, the two-task daily capacity, deadline guards, directional propagation, manual pins, fixed appointments, reviewable dependencies, recovery alternatives, and invalid dates. UI validation covers the Housing 10→12 flow, returning from a timing preview to all three choices without changing Housing or the saved plan, review/apply/undo, the Internet 15 deadline guard and **Use 14 Oct** repair, the banking hypothesis, and responsive layouts.
+The current model has 20 tests covering the fixed deadline and arrival date, the three address-pack timing choices, the two-task daily capacity, deadline guards, directional propagation, manual pins, fixed appointments, reviewable dependencies, recovery alternatives, and invalid dates. The historical snapshot retains its original seven-test suite. UI validation covers the Housing 10→12 flow, returning from a timing preview to all three choices without changing Housing or the saved plan, review/apply/undo, the Internet 15 deadline guard and **Use 14 Oct** repair, the banking hypothesis, and responsive layouts.

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#122b2a">
+  <title>MoveGraph — See your next move</title>
+  <meta name="description" content="See how the pieces of your move connect. Explore a change, understand its consequences, and make a plan you can trust.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23122b2a'/%3E%3Cpath d='M10 28V12l10 9 10-9v16' fill='none' stroke='%237fe1ba' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="interactions.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a href="./" class="brand" aria-label="MoveGraph home"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 25V7l10 11L26 7v18"/></svg>MoveGraph<span class="brand-period">.</span></a>
+      <div class="workspace-label">YOUR WORKSPACE</div>
+      <div class="nav-current"><span class="nav-icon">↗</span> My move <span class="nav-number">01</span></div>
+      <div class="move-card"><span class="eyebrow">NEXT CHAPTER</span><div>San Francisco <span>→</span><br><strong>Berlin</strong></div><p>18 October 2026</p><span class="sample-pill">Illustrative plan</span></div>
+      <div class="sidebar-note"><span class="note-glyph">⌁</span><p>One change.<br>A clearer way forward.</p></div>
+      <div class="journey-signature"><div class="journey-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><strong>7 cities. 4 years.</strong><span>Every move is connected.</span></div>
+      <button class="about-button" id="about-button"><span>ⓘ</span> About this demo</button>
+    </aside>
+    <main class="main-area">
+      <header class="topbar"><div class="breadcrumb">My move <span>/</span> San Francisco to Berlin</div><div class="topbar-end"><span class="demo-label">DEMO WORKSPACE</span><span class="avatar" aria-label="Hayk">H</span></div></header>
+      <section class="page-heading"><div><div class="heading-overline">A NEW CITY. A CONNECTED PLAN.</div><h1>Your next chapter, mapped.</h1><p>See what depends on what. Make your next move with clarity.</p></div><button class="button button-primary" id="simulate-button"><span>↗</span> Simulate a change</button></section>
+      <section class="plan-overview" aria-label="Plan overview"><div class="overview-primary"><span class="overview-check">✓</span><div><strong id="plan-health">Your plan has room to breathe</strong><span id="plan-summary">8 connected steps · 2 complete · 1 assumption to review</span></div></div><div class="arrival"><span>ARRIVAL IN BERLIN</span><strong>18 Oct <span>2026</span></strong></div><div class="readiness"><div><span>Tasks complete</span><strong>2 / 8</strong></div><div class="progress-track"><span></span></div></div></section>
+      <section class="workspace" aria-label="Move planning workspace">
+        <div class="graph-section"><div class="surface-toolbar"><div class="view-title"><span class="graph-icon">⌘</span> The bigger picture</div><div class="graph-hint">Select a step to follow its connections</div><button class="icon-button" id="reset-view" aria-label="Show full graph">⤢</button></div><div class="graph-viewport" id="graph-viewport"><div class="graph-canvas" id="graph-canvas"><svg class="connections" viewBox="0 0 860 550" aria-hidden="true"><path d="M230 131C275 131 260 267 310 267"/><path d="M230 267H310"/><path d="M510 267C550 267 535 131 575 131"/><path d="M510 267H575"/><path d="M510 267C550 267 535 407 575 407"/></svg><div class="graph-stage-label" style="left:28px">01 · PREPARE</div><div class="graph-stage-label" style="left:310px">02 · MAKE IT OFFICIAL</div><div class="graph-stage-label" style="left:575px">03 · SETTLE IN</div><button class="task-node complete" style="left:28px;top:90px"><span class="node-meta">✓ COMPLETE</span><strong>Prepare ID documents</strong><span class="node-footer">29 Sep <span>Documents</span></span></button><button class="task-node selected" style="left:28px;top:222px" id="housing-node"><span class="node-meta">● NEXT UP</span><strong>Confirm your housing</strong><span class="node-footer">03 Oct <span>Housing</span></span><span class="node-port"></span></button><button class="task-node" style="left:310px;top:222px"><span class="node-meta">○ PLANNED</span><strong>Prepare address pack</strong><span class="node-footer">05 Oct <span>Documents</span></span></button><button class="task-node" style="left:575px;top:90px"><span class="node-meta">○ FIXED APPOINTMENT</span><strong>Housing office check-in</strong><span class="node-footer">08 Oct <span>Appointment</span></span></button><button class="task-node" style="left:575px;top:222px"><span class="node-meta">○ PLANNED</span><strong>Arrange home internet</strong><span class="node-footer">07 Oct <span>Getting settled</span></span></button><button class="task-node assumption" style="left:575px;top:362px"><span class="node-meta">◇ NEEDS REVIEW</span><strong>Choose a local bank</strong><span class="node-footer">06 Oct <span>Suggested link</span></span></button></div><div class="graph-legend"><span><i class="legend-line"></i> Confirmed link</span><span><i class="legend-line dotted"></i> Assumption</span><span><i class="legend-dot"></i> Complete</span></div></div><div class="timeline-section"><div class="timeline-heading"><strong>Your October timeline</strong><span>One plan, seen through time</span></div><div class="timeline-preview"><span>01 OCT</span><span>05</span><span>10</span><span>15</span><span>20</span></div><div class="timeline-track"><span class="timeline-bar"></span><i></i><b>Arrival · 18 Oct</b></div></div></div>
+        <aside class="inspector" id="inspector"><div class="inspector-eyebrow">STEP DETAILS <span>01 / 08</span></div><div class="detail-icon">⌂</div><h2>Confirm your housing</h2><p class="detail-description">Get written confirmation of your room and move-in date from your housing coordinator.</p><div class="detail-date"><span>Planned for</span><strong>03 October 2026</strong></div><div class="detail-section"><h3>THIS UNLOCKS</h3><div class="unlock-item"><span>↳</span> Prepare address pack</div><div class="unlock-item"><span>↳</span> 2 steps further down the line</div></div><div class="evidence-card"><span>▤ &nbsp; Your planning notes</span><p>“I’ll put my address pack together once my room is confirmed.”</p><small>Scenario note · illustrative dependency</small></div><div class="inspector-bottom"><p>Plans change. See the ripple before you commit.</p><button class="button button-outline" id="detail-simulate">Try a different date <span>→</span></button></div></aside>
+      </section>
+      <footer class="page-footer"><button id="footer-about">7 cities. 4 years. About this demo ↗</button><span>Sample dates and planning assumptions · Not official relocation requirements</span></footer>
+    </main>
+  </div>
+  <div id="overlay-root"></div><div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

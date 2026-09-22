@@ -77,11 +77,11 @@ Propagation runs forward. Earlier tasks and independent branches remain stable. 
 4. Compare the same-day, one-day, and two-day Address Pack choices.
 5. Choose **2 days later**. Show Address Pack and Internet grouped on the 14th, the Check-in request on the 15th, and readiness on the 17th conditional on that external confirmation.
 6. Review the exact change, apply it, and undo it.
-7. Move Internet from the 14th to the 15th to demonstrate the deadline guard, then select **Use 14 Oct** and **Follow dependencies**.
-8. Inspect the address-to-banking design hypothesis to show how Hayk challenged the AI-generated independent baseline while keeping the alternative reviewable.
+7. Inspect the address-to-banking design hypothesis to show how Hayk challenged the AI-generated independent baseline while keeping the alternative reviewable.
+8. Switch briefly to the frozen first prototype, select **Simulate a change**, and show the preset seven-day scenario, Housing-only entry point, permanent timeline, and competing chrome. Return to the current build while explaining the resulting design decisions.
 9. Close with AI’s role in the process and the next research step.
 
-The recording-ready click sequence and timed narration are in `DEMO_SCRIPT.md`.
+The recording-ready click sequence and timed narration are in `DEMO_SCRIPT.md`. The Internet deadline guard remains part of the full capability walkthrough above, but it is intentionally omitted from the three-minute recording.
 
 ## Why arbitrary event creation remains outside this prototype
 
